@@ -91,18 +91,19 @@ Use compile-time selection:
 PROJECT STRUCTURE (MANDATORY)
 ================================================
 
-src/
-├── main.cpp
-├── state_machine.h
-├── state_machine.cpp
-├── sensors.h
-├── sensors.cpp
-├── outputs.h
-├── outputs.cpp
-├── ui.h
-├── ui.cpp
-├── touch.h
-├── touch.cpp
+firmware/
+├── src/
+│   ├── main.cpp
+│   ├── state_machine.h
+│   ├── state_machine.cpp
+│   ├── sensors.h
+│   ├── sensors.cpp
+│   ├── outputs.h
+│   ├── outputs.cpp
+│   ├── ui.h
+│   ├── ui.cpp
+│   ├── touch.h
+│   ├── touch.cpp
 
 ================================================
 SYSTEM ARCHITECTURE (IMPORTANT)
@@ -313,7 +314,7 @@ STEP 10 (SAFETY) (DONE):
 
 STEP 11 (MQTT/DASHBOARD):
 
-- Implement MQTT and phone webapp dashboard integration
+- Implement MQTT and phone webDashboard integration
   STOP and wait for OK.
 
 ================================================
@@ -347,14 +348,14 @@ PROJECT TODO LIST (BUGS / GAPS)
 8. Add FAN_ONLY toggle behavior and UI state indication. (DONE)
 9. Add sensor-fault telemetry flag to MQTT. (DONE)
 10. Add MQTT auth/TLS, LWT, and reconnect backoff; move config to NVS (not compile-time only). (DONE)
-11. Webapp: add setpoint controls and MQTT connection status indicator. Hysteresis is hard-coded (no user control). (DONE)
+11. WebDashboard: add setpoint controls and MQTT connection status indicator. Hysteresis is hard-coded (no user control). (DONE)
 12. Reduce duplication between src/ and lib/ui/src/ to avoid divergence. (DONE)
 13. Document project-specific hardware list and usage. (DONE)
-14. Fix MQTT setpoint telemetry topic mismatch (device publishes `setpoint_c`, webapp listens for `setpoint`). (DONE)
-15. Align MQTT broker config between device and webapp (host/port/base topic). (DONE)
-16. Ensure MQTT broker WebSocket listener is enabled and matches `VITE_MQTT_URL` in webapp. (DONE - added `thermostat-web-app/.env.example`). (DONE)
+14. Fix MQTT setpoint telemetry topic mismatch (device publishes `setpoint_c`, webDashboard listens for `setpoint`). (DONE)
+15. Align MQTT broker config between device and webDashboard (host/port/base topic). (DONE)
+16. Ensure MQTT broker WebSocket listener is enabled and matches `VITE_MQTT_URL` in webDashboard. (DONE - added `webDashboard/.env.example`). (DONE)
 17. Save valid Wi‑Fi credentials on device to allow MQTT connection. (DONE)
-18. Run MQTT broker with WebSockets enabled and ensure host/port match device/webapp config.
+18. Run MQTT broker with WebSockets enabled and ensure host/port match device/webDashboard config.
 19. Flash firmware to ESP32 and verify Wi‑Fi + MQTT connectivity on hardware.
 20. Validate sensors + relay outputs on hardware (SHT3x readings, heater/cooler/fan/pump behavior, OFF fail‑safe).
 21. Run touch calibration on first boot if using XPT2046.

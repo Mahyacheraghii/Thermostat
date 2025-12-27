@@ -11,5 +11,5 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
-web-dashboard/dist
-web-dashboard/node_modules
+webDashboard/dist
+webDashboard/node_modules
