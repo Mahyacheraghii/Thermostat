@@ -21,7 +21,7 @@ PLATFORM & TOOLS
     point on an ESP32 with ~320KB usable SRAM.
 - Graphics: LVGL (UI designed with SquareLine)
 - Touch: PRESENT (must be implemented)
-- Sensor: SHT31 (Temperature + Humidity, I2C)
+- Sensor: SHT3x (Temperature + Humidity, I2C)
 - Outputs: 4 relays (Heater, Cooler, Fan, Pump)
 
 ================================================
@@ -40,47 +40,94 @@ NO pseudo-code.
 PIN MAPPING (MANDATORY – DO NOT CHANGE)
 ================================================
 
---- RELAYS (Active HIGH) ---
-Heater Relay → GPIO 26
-Cooler Relay → GPIO 27
-Fan Relay → GPIO 14
-Pump Relay → GPIO 25
+--- BEGINNER WIRING NOTES (READ FIRST) ---
+- ESP32 GPIO pins are 3.3V logic only; never connect 5V to any GPIO.
+- Always share GND between ESP32 and external modules (relay board, TFT, sensors).
+- Power the relay board from a separate 5V source; do not draw relay current from ESP32 3.3V.
+- Use COM + NO for loads so they stay OFF by default when ESP32 is unpowered.
+- Boot-strap pins (GPIO 2, 4, 5, 15) must not be forced high/low at boot; avoid strong pull-ups/downs.
+- GPIO34–GPIO39 are input-only; do not use them for outputs.
+
+--- DEV BOARD LABELS (D/VP/VN → GPIO) ---
+| روی برد (D) | GPIO واقعی | توضیح           |
+| ----------- | ---------- | --------------- |
+| **VP**      | GPIO36     | فقط ورودی (ADC) |
+| **VN**      | GPIO39     | فقط ورودی (ADC) |
+| **D34**     | GPIO34     | فقط ورودی       |
+| **D35**     | GPIO35     | فقط ورودی       |
+| **D32**     | GPIO32     | ورودی/خروجی     |
+| **D33**     | GPIO33     | ورودی/خروجی     |
+| **D25**     | GPIO25     | ورودی/خروجی     |
+| **D26**     | GPIO26     | ورودی/خروجی     |
+| **D27**     | GPIO27     | ورودی/خروجی     |
+| **D14**     | GPIO14     | SPI / OK        |
+| **D12**     | GPIO12     | بوت حساس        |
+| **D13**     | GPIO13     | SPI / OK        |
+| **D23**     | GPIO23     | MOSI            |
+| **D22**     | GPIO22     | I2C SCL         |
+| **TX0**     | GPIO1      | سریال           |
+| **RX0**     | GPIO3      | سریال           |
+| **D21**     | GPIO21     | I2C SDA         |
+| **D19**     | GPIO19     | MISO            |
+| **D18**     | GPIO18     | SCK             |
+| **D5**      | GPIO5      | CS              |
+| **D17**     | GPIO17     | IO              |
+| **D16**     | GPIO16     | IO              |
+| **D4**      | GPIO4      | OK              |
+| **D2**      | GPIO2      | بوت حساس        |
+| **D15**     | GPIO15     | بوت حساس        |
+
+--- RELAYS (SRD-05VDC-SL-C, Active HIGH) ---
+Heater Relay IN → GPIO 26 (D26)
+Cooler Relay IN → GPIO 27 (D27)
+Fan Relay IN → GPIO 14 (D14)
+Pump Relay IN → GPIO 25 (D25)
+Relay board DC+ → 5V
+Relay board DC- → GND
+Load wiring: use COM + NO (normally open) for default-OFF behavior
+Load wiring (AC mains): LIVE → COM, NO → load LIVE, load NEUTRAL → NEUTRAL
+Load wiring (DC): +V → COM, NO → load +, load - → GND/-
 
 Default boot state: ALL OFF
 Pump priming in PRESTART: run for 10s, then transition along the COOLING path. Pump must be OFF before entering FAN_ONLY or HEATING.
 
---- SHT31 SENSOR (I2C) ---
-VCC → 3.3V
+--- SHT3x SENSOR (I2C) ---
+VIN → 3.3V
 GND → GND
-SDA → GPIO 21
-SCL → GPIO 22
+SDA → GPIO 21 (D21)
+SCL → GPIO 22 (D22)
 I2C address: 0x44
+Notes: keep I2C wires short; if unstable, add 4.7k pull-ups to 3.3V on SDA/SCL.
 
 --- TFT ILI9341 (SPI) ---
-MOSI → GPIO 23
-MISO → GPIO 19
-SCK → GPIO 18
-CS → GPIO 5
-DC → GPIO 2
-RST → GPIO 4
+SDI (MOSI) → GPIO 23 (D23)
+SDO (MISO) → GPIO 19 (D19)
+SCK → GPIO 18 (D18)
+CS → GPIO 5 (D5)
+D/C → GPIO 2 (D2)
+RESET → GPIO 4 (D4)
+LED (backlight) → GPIO 32 (D32, PWM capable)
 VCC → 3.3V
 GND → GND
+Notes: backlight LED should be driven through a transistor/driver if it draws >10–15mA.
 
 --- TOUCH CONTROLLER (CHOOSE ONE, SUPPORT BOTH) ---
 
 Option A: XPT2046 (Resistive, SPI)
 
-- T_CLK → GPIO 18 (shared SPI SCK)
-- T_DIN → GPIO 23 (shared SPI MOSI)
-- T_DO → GPIO 19 (shared SPI MISO)
-- T_CS → GPIO 15
-- T_IRQ → GPIO 33
+- T_CLK → GPIO 18 (D18, shared SPI SCK)
+- T_DIN → GPIO 23 (D23, shared SPI MOSI)
+- T_OUT/T_DO → GPIO 19 (D19, shared SPI MISO)
+- T_CS → GPIO 15 (D15)
+- T_IRQ → GPIO 33 (D33)
+Notes: if touch is unstable, add a small capacitor (100nF) near touch VCC/GND.
 
 Option B: FT6206 / FT6236 (Capacitive, I2C)
 
-- SDA → GPIO 21 (shared I2C)
-- SCL → GPIO 22 (shared I2C)
-- INT → GPIO 33 (optional)
+- SDA → GPIO 21 (D21, shared I2C)
+- SCL → GPIO 22 (D22, shared I2C)
+- INT → GPIO 33 (D33, optional)
+Notes: share I2C bus with SHT3x; make sure both are 3.3V.
 
 Use compile-time selection:
 #define TOUCH_TYPE_XPT2046 1
@@ -184,7 +231,7 @@ SUMMER:
 - Cooler OFF when currentTemp <= setPoint - hysteresis
 
 ================================================
-SENSOR REQUIREMENTS (SHT31)
+SENSOR REQUIREMENTS (SHT3x)
 ================================================
 
 - Use Adafruit_SHT31 library
@@ -194,7 +241,7 @@ SENSOR REQUIREMENTS (SHT31)
   - sensor not found
   - NaN readings
 - Limit read rate (≈1s)
-- Comment what SHT31 is and why it’s better than DHT22
+- Comment what SHT3x is and why it’s better than DHT22
 
 ================================================
 OUTPUT LOGIC
@@ -206,6 +253,16 @@ OUTPUT LOGIC
 - FAN_ONLY → Fan only (Pump OFF before entering)
 - IDLE → all OFF
 - OFF → all OFF
+
+================================================
+SAFETY CHECKS (HARDWARE)
+================================================
+
+- Relays must default OFF at boot; configure GPIO outputs before enabling any logic.
+- Use COM + NO on relay outputs for default-OFF load behavior; never use NC unless explicitly required.
+- Relay module DC+ must be 5V and DC- GND; do not feed 5V into ESP32 GPIO pins.
+- Backlight LED pin must be driven through a suitable transistor or LED driver; do not source high current directly from ESP32.
+- Be careful with boot-strap pins (GPIO 2, 4, 5, 15): keep external pull-ups/downs per ESP32 boot requirements to avoid boot failure.
 
 ================================================
 UI & TOUCH (LVGL)
