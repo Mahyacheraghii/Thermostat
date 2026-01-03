@@ -11,8 +11,8 @@
 // Use wrapper that includes real drivers when available or provides shims
 #include "touch_drivers.h"
 
-// Pins from rules: T_CS -> GPIO15, T_IRQ -> GPIO33, SPI uses standard MOSI/MISO/SCK
-#define T_CS_PIN 15
+// Pins from rules: T_CS -> GPIO5, T_IRQ -> GPIO33, SPI uses standard MOSI/MISO/SCK
+#define T_CS_PIN 5
 #define T_IRQ_PIN 33
 
 static XPT2046_Touchscreen ts(T_CS_PIN, T_IRQ_PIN);

@@ -140,7 +140,6 @@ void GUI_event__TextArea__wifi__pass__Focused (lv_event_t* event);
 
 #endif //_GUI_HEADER_INCLUDED
 
-LV_IMG_DECLARE( img_template_png );
 LV_IMG_DECLARE( dashboard );
 LV_IMG_DECLARE( wifi );
 LV_IMG_DECLARE( fan );
