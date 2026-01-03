@@ -1,9 +1,41 @@
 #include "ui.h"
 #include <lvgl.h>
 #include <WiFi.h>
+#include <TFT_eSPI.h>
 #include "GUI.h"
 #include "ui_callbacks.h"
 #include "state_machine.h"
+#include "touch.h"
+
+namespace
+{
+    static const uint16_t kScreenWidth = 320;
+    static const uint16_t kScreenHeight = 240;
+    enum
+    {
+        kScreenBufferPixels = kScreenWidth * kScreenHeight / 30
+    };
+    static lv_color_t s_buf[kScreenBufferPixels];
+    static TFT_eSPI s_tft = TFT_eSPI(kScreenWidth, kScreenHeight);
+
+    void uiDispFlush(lv_display_t *disp, const lv_area_t *area, uint8_t *pixelmap)
+    {
+        uint32_t w = (area->x2 - area->x1 + 1);
+        uint32_t h = (area->y2 - area->y1 + 1);
+
+        s_tft.startWrite();
+        s_tft.setAddrWindow(area->x1, area->y1, w, h);
+        s_tft.pushImage(area->x1, area->y1, w, h, (uint16_t *)pixelmap);
+        s_tft.endWrite();
+
+        lv_disp_flush_ready(disp);
+    }
+
+    uint32_t uiTickGetCb()
+    {
+        return millis();
+    }
+}
 
 static void uiUpdateLabels()
 {
@@ -70,8 +102,23 @@ static void uiUpdateLabels()
 
 void uiInit()
 {
-    // LVGL UI callbacks are in `ui_callbacks.*` and should be attached by
-    // the generated GUI code (SquareLine). Nothing else to do here for now.
+    lv_init();
+
+    s_tft.begin();
+    s_tft.setRotation(3);
+    s_tft.setSwapBytes(true);
+
+    lv_display_t *disp = lv_display_create(kScreenWidth, kScreenHeight);
+    lv_display_set_buffers(disp, s_buf, NULL, kScreenBufferPixels * sizeof(lv_color_t), LV_DISPLAY_RENDER_MODE_PARTIAL);
+    lv_display_set_flush_cb(disp, uiDispFlush);
+
+    lv_tick_set_cb(uiTickGetCb);
+
+    lv_indev_t *indev = lv_indev_create();
+    lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
+    lv_indev_set_read_cb(indev, touchLvglRead);
+
+    GUI_loadContent();
 }
 
 static void uiUpdateWifiIcon(wl_status_t status)

@@ -118,9 +118,9 @@ void GUI_initScreenTexts__screen () {
 void GUI_initScreenStyles__screen () {
     lv_obj_add_style( GUI_Screen__screen, &GUI_Style__class_720QKVxWEmbvhM__, LV_PART_MAIN | LV_STATE_DEFAULT );
 
-     lv_image_set_src( GUI_Image__screen__dashboardImg, &img_template_png );
+     lv_image_set_src( GUI_Image__screen__dashboardImg, &dashboard );
 
-     lv_image_set_src( GUI_Image__screen__wifiImage, &img_template_png );
+     lv_image_set_src( GUI_Image__screen__wifiImage, &wifi );
 
      lv_obj_add_style( GUI_Arc__screen__arc, &GUI_Style__class_wKRNl64hJph3yK__, LV_PART_MAIN | LV_STATE_DEFAULT );
      lv_obj_add_style( GUI_Arc__screen__arc, &GUI_Style__class_BRPSMN5kLlcn7C__, LV_PART_INDICATOR | LV_STATE_DEFAULT );
@@ -130,7 +130,7 @@ void GUI_initScreenStyles__screen () {
 
       lv_obj_add_style( GUI_Container__screen__moistureContainer, &GUI_Style__class_JqUcMs1ZNPRfQq__, LV_PART_MAIN | LV_STATE_DEFAULT );
 
-       lv_image_set_src( GUI_Image__screen__moistureImg, &img_template_png );
+       lv_image_set_src( GUI_Image__screen__moistureImg, &winter );
 
        lv_obj_add_style( GUI_Label__screen__moisture, &GUI_Style__class_MsKIDbZdEXuzIO__, LV_PART_MAIN | LV_STATE_DEFAULT );
 
@@ -142,13 +142,13 @@ void GUI_initScreenStyles__screen () {
 
      lv_obj_add_style( GUI_Container__screen__controlleersContainer, &GUI_Style__class_Mjy6X8hngx7TUa__, LV_PART_MAIN | LV_STATE_DEFAULT );
 
-      lv_image_set_src( GUI_Image__screen__moodImg, &img_template_png );
+      lv_image_set_src( GUI_Image__screen__moodImg, &sun );
 
-      lv_image_set_src( GUI_Image__screen__fanImg, &img_template_png );
+      lv_image_set_src( GUI_Image__screen__fanImg, &fan );
 
-      lv_image_set_src( GUI_Image__screen__pumpImg, &img_template_png );
+      lv_image_set_src( GUI_Image__screen__pumpImg, &pump );
 
-     lv_image_set_src( GUI_Image__screen__powerImg, &img_template_png );
+     lv_image_set_src( GUI_Image__screen__powerImg, &power );
 
 }
 
