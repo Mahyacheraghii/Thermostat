@@ -1,8 +1,8 @@
+# Implementation Guide
+
 We are building a REAL, HARDWARE-READY smart thermostat using ESP32.
 
-================================================
-PLATFORM & TOOLS
-================================================
+## PLATFORM & TOOLS
 
 - Board: ESP32 Dev Module (esp32dev)
 - SoC module: ESP-WROOM-32 (ESP32; main MCU running Arduino/LVGL/state machine)
@@ -19,9 +19,7 @@ PLATFORM & TOOLS
 - Sensor: SHT3x (Temperature + Humidity, I2C)
 - Outputs: 4 relays (Heater, Cooler, Fan, Pump)
 
-================================================
-HARDWARE (PROJECT SPECIFIC)
-================================================
+## HARDWARE (PROJECT SPECIFIC)
 
 - ESP-WROOM-32: main ESP32 module; runs firmware, Wi-Fi, MQTT, LVGL UI.
 - SHT3x: I2C temperature + humidity sensor; provides ambient data for control loops.
@@ -31,9 +29,7 @@ HARDWARE (PROJECT SPECIFIC)
 All code must be REAL, compilable, and suitable for real hardware.
 NO pseudo-code.
 
-================================================
-PIN MAPPING (MANDATORY – DO NOT CHANGE)
-================================================
+## PIN MAPPING (MANDATORY – DO NOT CHANGE)
 
 --- WIRING NOTES (READ FIRST) ---
 
@@ -120,9 +116,7 @@ XPT2046 (Resistive, SPI)
 - T_IRQ → GPIO 33 (D33)
   Notes: if touch is unstable, add a small capacitor (100nF) near touch VCC/GND.
 
-================================================
-PROJECT STRUCTURE
-================================================
+## PROJECT STRUCTURE
 
 firmware/
 ├── src/
@@ -138,9 +132,7 @@ firmware/
 │ ├── touch.h
 │ ├── touch.cpp
 
-================================================
-SYSTEM ARCHITECTURE (IMPORTANT)
-================================================
+## SYSTEM ARCHITECTURE (IMPORTANT)
 
 - UI NEVER changes states directly.
 - UI ONLY sets request flags.
@@ -148,9 +140,7 @@ SYSTEM ARCHITECTURE (IMPORTANT)
 - Outputs are applied ONLY based on current state.
 - Sensor failure must force safe state.
 
-================================================
-STATE MACHINE
-================================================
+## STATE MACHINE
 
 States:
 
@@ -205,9 +195,7 @@ Rules:
 
 NEVER compare floats using ==
 
-================================================
-HYSTERESIS (MANDATORY)
-================================================
+## HYSTERESIS (MANDATORY)
 
 Configurable hysteresis (example: 0.5°C)
 
@@ -221,9 +209,7 @@ SUMMER:
 - Cooler ON when currentTemp >= setPoint + hysteresis
 - Cooler OFF when currentTemp <= setPoint - hysteresis
 
-================================================
-SENSOR REQUIREMENTS (SHT3x)
-================================================
+## SENSOR REQUIREMENTS (SHT3x)
 
 - Use Adafruit_SHT31 library
 - Initialize I2C manually
@@ -233,9 +219,7 @@ SENSOR REQUIREMENTS (SHT3x)
   - NaN readings
 - Limit read rate (≈1s)
 
-================================================
-OUTPUT LOGIC
-================================================
+## OUTPUT LOGIC
 
 - PRESTART → Pump ON for 10s only if pumpDesired is true; otherwise pump OFF
 - HEATING → Heater + Fan (Pump OFF before entering HEATING)
@@ -244,9 +228,7 @@ OUTPUT LOGIC
 - IDLE → all OFF
 - OFF → all OFF
 
-================================================
-SAFETY CHECKS (HARDWARE)
-================================================
+## SAFETY CHECKS (HARDWARE)
 
 - Relays must default OFF at boot; configure GPIO outputs before enabling any logic.
 - Use COM + NO on relay outputs for default-OFF load behavior;
@@ -254,9 +236,7 @@ SAFETY CHECKS (HARDWARE)
 - Backlight LED pin must be driven through a suitable transistor or LED driver; do not source high current directly from ESP32.
 - Be careful with boot-strap pins (GPIO 2, 4, 5, 15): keep external pull-ups/downs per ESP32 boot requirements to avoid boot failure.
 
-================================================
-UI & TOUCH (LVGL)
-================================================
+## UI & TOUCH (LVGL)
 
 - Implement LVGL input device driver for touch
 - Support XPT2046
@@ -267,9 +247,7 @@ UI & TOUCH (LVGL)
   - powerOffRequested
   - modeChanged
 
-================================================
-IMPLEMENTATION STEPS
-================================================
+## IMPLEMENTATION STEPS
 
 STEP 1:
 
@@ -338,9 +316,7 @@ STEP 11 (MQTT/DASHBOARD):
 
 - Implement MQTT and phone webDashboard integration
 
-================================================
-PROJECT TODO LIST (BUGS / GAPS)
-================================================
+## PROJECT TODO LIST (BUGS / GAPS)
 
 0. Get a stable 5V supply for the relay board (enough current for 4 relays).
 1. Run MQTT broker with WebSockets enabled and ensure host/port match device/webDashboard config.(to-do)
