@@ -3,7 +3,6 @@
 #include <Arduino.h>
 
 #define TOUCH_TYPE_XPT2046 1
-#define TOUCH_TYPE_FT6X36 2
 
 #ifndef TOUCH_TYPE
 #define TOUCH_TYPE TOUCH_TYPE_XPT2046

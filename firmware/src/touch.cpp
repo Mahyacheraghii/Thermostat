@@ -4,9 +4,8 @@
 #define TFT_WIDTH 320
 #define TFT_HEIGHT 240
 
-// Include SPI/Wire for underlying platform APIs
+// Include SPI for underlying platform APIs
 #include <SPI.h>
-#include <Wire.h>
 #include <Preferences.h>
 
 // Use wrapper that includes real drivers when available or provides shims
@@ -16,11 +15,7 @@
 #define T_CS_PIN 15
 #define T_IRQ_PIN 33
 
-#if TOUCH_TYPE == TOUCH_TYPE_XPT2046
 static XPT2046_Touchscreen ts(T_CS_PIN, T_IRQ_PIN);
-#elif TOUCH_TYPE == TOUCH_TYPE_FT6X36
-static Adafruit_FT6206 ftTouch = Adafruit_FT6206();
-#endif
 
 // Internal state for last known touch coordinates
 static volatile bool s_touched = false;
@@ -78,14 +73,9 @@ static void touchSaveCalibration()
 
 void touchInit()
 {
-#if TOUCH_TYPE == TOUCH_TYPE_XPT2046
     SPI.begin();
     ts.begin();
     touchLoadCalibration();
-#elif TOUCH_TYPE == TOUCH_TYPE_FT6X36
-    Wire.begin();
-    ftTouch.begin(40); // sensitivity
-#endif
 }
 
 static void touchCalSetState(CalState next)
@@ -104,7 +94,6 @@ static void touchCalSetState(CalState next)
 
 static void touchCalibrationTick()
 {
-#if TOUCH_TYPE == TOUCH_TYPE_XPT2046
     bool touched = ts.touched();
     switch (s_cal_state)
     {
@@ -170,13 +159,11 @@ static void touchCalibrationTick()
     default:
         break;
     }
-#endif
 }
 
 void touchUpdate()
 {
     // Poll and update cached coordinates; LVGL will call touchLvglRead to consume them
-#if TOUCH_TYPE == TOUCH_TYPE_XPT2046
     if (s_cal_state != CAL_IDLE)
     {
         touchCalibrationTick();
@@ -232,34 +219,12 @@ void touchUpdate()
     {
         s_touched = false;
     }
-#elif TOUCH_TYPE == TOUCH_TYPE_FT6X36
-    if (ftTouch.touched())
-    {
-        TS_Point p = ftTouch.getPoint();
-        s_touchX = p.x;
-        s_touchY = p.y;
-        // Adafruit FT library returns coords already in pixels for common setups
-        if (s_touchX >= TFT_WIDTH)
-            s_touchX = TFT_WIDTH - 1;
-        if (s_touchY >= TFT_HEIGHT)
-            s_touchY = TFT_HEIGHT - 1;
-        s_touched = true;
-    }
-    else
-    {
-        s_touched = false;
-    }
-#endif
 }
 
 // Start non-blocking calibration. Calibration results are persisted to NVS.
 void touchCalibrateStart()
 {
-#if TOUCH_TYPE == TOUCH_TYPE_XPT2046
     touchCalSetState(CAL_WAIT_TL_PRESS);
-#else
-    Serial.println("Touch calibration not required for this driver.");
-#endif
 }
 
 bool touchCalibrationIsActive()
