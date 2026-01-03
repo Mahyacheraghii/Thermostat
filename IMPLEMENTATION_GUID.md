@@ -97,24 +97,22 @@ Notes: keep I2C wires short; if unstable, add 4.7k pull-ups to 3.3V on SDA/SCL.
 SDI (MOSI) → GPIO 23 (D23)
 SDO (MISO) → GPIO 19 (D19)
 SCK → GPIO 18 (D18)
-CS → GPIO 5 (D5)
+CS → GPIO 15 (D15)
 D/C → GPIO 2 (D2)
 RESET → GPIO 4 (D4)
-LED (backlight) → GPIO 32 (D32, PWM capable)
+LED (backlight) → 3.3V (always on) or GPIO 32 (D32, PWM capable)
 VCC → 3.3V
 GND → GND
-Notes: backlight LED should be driven through a transistor/driver if it draws >10–15mA.
+Notes: if you use PWM on LED, drive it through a transistor/driver if it draws >10–15mA.
 
---- TOUCH CONTROLLER ---
+--- TOUCH CONTROLLER (XPT2046, Resistive, SPI) ---
 
-XPT2046 (Resistive, SPI)
-
-- T_CLK → GPIO 18 (D18, shared SPI SCK)
-- T_DIN → GPIO 23 (D23, shared SPI MOSI)
-- T_OUT/T_DO → GPIO 19 (D19, shared SPI MISO)
-- T_CS → GPIO 15 (D15)
-- T_IRQ → GPIO 33 (D33)
-  Notes: if touch is unstable, add a small capacitor (100nF) near touch VCC/GND.
+T_CLK → GPIO 18 (D18, shared SPI SCK)
+T_DIN → GPIO 23 (D23, shared SPI MOSI)
+T_OUT/T_DO → GPIO 19 (D19, shared SPI MISO)
+T_CS → GPIO 5 (D5)
+T_IRQ → GPIO 33 (D33)
+Notes: if touch is unstable, add a small capacitor (100nF) near touch VCC/GND.
 
 ## PROJECT STRUCTURE
 
