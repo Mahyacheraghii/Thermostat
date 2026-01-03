@@ -1,6 +1,7 @@
 #include "mqtt.h"
 
 #include <WiFi.h>
+#include "../include/wifi_secure_shim.h"
 #include <PubSubClient.h>
 #include <Preferences.h>
 
@@ -8,19 +9,19 @@
 #include "sensors.h"
 
 #ifndef WIFI_SSID
-#define WIFI_SSID "CHANGE_ME"
+#define WIFI_SSID "Mahya's iPhone"
 #endif
 
 #ifndef WIFI_PASSWORD
-#define WIFI_PASSWORD "CHANGE_ME"
+#define WIFI_PASSWORD "immahyaa"
 #endif
 
 #ifndef MQTT_HOST
-#define MQTT_HOST "192.168.1.100"
+#define MQTT_HOST "25e714c4c7914708950ce3a88dc1dd1a.s1.eu.hivemq.cloud"
 #endif
 
 #ifndef MQTT_PORT
-#define MQTT_PORT 1883
+#define MQTT_PORT 8883
 #endif
 
 #ifndef MQTT_CLIENT_ID
@@ -31,19 +32,17 @@
 #define MQTT_BASE_TOPIC "thermostat"
 #endif
 
-// Optional MQTT auth/TLS (compile-time or NVS override)
 #ifndef MQTT_USER
-#define MQTT_USER ""
+#define MQTT_USER "mahya"
 #endif
 
 #ifndef MQTT_PASS
-#define MQTT_PASS ""
+#define MQTT_PASS "vikrap-weqrug-xabVe6"
 #endif
 
 #ifndef MQTT_USE_TLS
-#define MQTT_USE_TLS 0
+#define MQTT_USE_TLS 1
 #endif
-
 namespace
 {
     WiFiClient s_wifiClient;
