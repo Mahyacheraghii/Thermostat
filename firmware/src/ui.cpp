@@ -9,14 +9,14 @@
 
 namespace
 {
-    static const uint16_t kScreenWidth = 320;
-    static const uint16_t kScreenHeight = 240;
+    static const uint16_t kMaxScreenWidth = 320;
+    static const uint16_t kMaxScreenHeight = 240;
     enum
     {
-        kScreenBufferPixels = kScreenWidth * kScreenHeight / 30
+        kScreenBufferPixels = kMaxScreenWidth * kMaxScreenHeight / 30
     };
     static lv_color_t s_buf[kScreenBufferPixels];
-    static TFT_eSPI s_tft = TFT_eSPI(kScreenWidth, kScreenHeight);
+    static TFT_eSPI s_tft = TFT_eSPI();
 
     void uiDispFlush(lv_display_t *disp, const lv_area_t *area, uint8_t *pixelmap)
     {
@@ -25,7 +25,7 @@ namespace
 
         s_tft.startWrite();
         s_tft.setAddrWindow(area->x1, area->y1, w, h);
-        s_tft.pushImage(area->x1, area->y1, w, h, (uint16_t *)pixelmap);
+        s_tft.pushPixels(pixelmap, w * h);
         s_tft.endWrite();
 
         lv_disp_flush_ready(disp);
@@ -108,7 +108,9 @@ void uiInit()
     s_tft.setRotation(3);
     s_tft.setSwapBytes(true);
 
-    lv_display_t *disp = lv_display_create(kScreenWidth, kScreenHeight);
+    const uint16_t screenWidth = s_tft.width();
+    const uint16_t screenHeight = s_tft.height();
+    lv_display_t *disp = lv_display_create(screenWidth, screenHeight);
     lv_display_set_buffers(disp, s_buf, NULL, kScreenBufferPixels * sizeof(lv_color_t), LV_DISPLAY_RENDER_MODE_PARTIAL);
     lv_display_set_flush_cb(disp, uiDispFlush);
 
@@ -126,35 +128,31 @@ static void uiUpdateWifiIcon(wl_status_t status)
     if (!GUI_Image__screen__wifiImage)
         return;
 
-    lv_color_t color = lv_color_hex(0x94a3b8);
-    uint8_t recolor_opa = 120;
+    uint8_t icon_opa = 140;
 
     if (status == WL_CONNECTED)
     {
-        color = lv_color_hex(0x22c55e);
         int rssi = WiFi.RSSI();
         if (rssi > -60)
-            recolor_opa = 255; // full
+            icon_opa = 255; // full
         else if (rssi > -70)
-            recolor_opa = 200; // medium
+            icon_opa = 200; // medium
         else if (rssi > -80)
-            recolor_opa = 140; // low
+            icon_opa = 160; // low
         else
-            recolor_opa = 90; // weak
+            icon_opa = 120; // weak
     }
     else if (status == WL_IDLE_STATUS)
     {
-        color = lv_color_hex(0xf59e0b); // connecting
-        recolor_opa = 180;
+        icon_opa = 180; // connecting
     }
     else if (status == WL_CONNECT_FAILED || status == WL_NO_SSID_AVAIL)
     {
-        color = lv_color_hex(0xef4444); // error
-        recolor_opa = 220;
+        icon_opa = 120; // error
     }
 
-    lv_obj_set_style_img_recolor(GUI_Image__screen__wifiImage, color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_img_recolor_opa(GUI_Image__screen__wifiImage, recolor_opa, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_img_recolor_opa(GUI_Image__screen__wifiImage, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_img_opa(GUI_Image__screen__wifiImage, icon_opa, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
 void uiUpdate()

@@ -10,14 +10,16 @@ void GUI_initScreen__screen () {
      lv_obj_remove_flag( GUI_Image__screen__dashboardImg, LV_OBJ_FLAG_SCROLLABLE );
      lv_obj_set_align( GUI_Image__screen__dashboardImg, LV_ALIGN_CENTER );
      lv_obj_set_pos( GUI_Image__screen__dashboardImg, 141, -100 );
-     lv_obj_set_size( GUI_Image__screen__dashboardImg, 30, 30 );
+     lv_obj_set_size( GUI_Image__screen__dashboardImg, 24, 24 );
+     lv_img_set_zoom( GUI_Image__screen__dashboardImg, 204 );
 
     GUI_Image__screen__wifiImage = lv_image_create( GUI_Screen__screen );
     lv_obj_add_flag( GUI_Image__screen__wifiImage, LV_OBJ_FLAG_ADV_HITTEST );
     lv_obj_remove_flag( GUI_Image__screen__wifiImage, LV_OBJ_FLAG_SCROLLABLE );
     lv_obj_set_align( GUI_Image__screen__wifiImage, LV_ALIGN_CENTER );
     lv_obj_set_pos( GUI_Image__screen__wifiImage, -140, -100 );
-    lv_obj_set_size( GUI_Image__screen__wifiImage, 30, 30 );
+    lv_obj_set_size( GUI_Image__screen__wifiImage, 24, 24 );
+    lv_img_set_zoom( GUI_Image__screen__wifiImage, 204 );
     lv_obj_add_event_cb( GUI_Image__screen__wifiImage, GUI_event__Image__screen__wifiImage__Clicked, LV_EVENT_CLICKED, NULL );
 
      GUI_Arc__screen__arc = lv_arc_create( GUI_Screen__screen );
@@ -41,13 +43,14 @@ void GUI_initScreen__screen () {
       lv_obj_remove_flag( GUI_Container__screen__moistureContainer, LV_OBJ_FLAG_CLICKABLE );
       lv_obj_remove_flag( GUI_Container__screen__moistureContainer, LV_OBJ_FLAG_SCROLLABLE );
       lv_obj_set_align( GUI_Container__screen__moistureContainer, LV_ALIGN_CENTER );
-      lv_obj_set_size( GUI_Container__screen__moistureContainer, 52, 22 );
+      lv_obj_set_size( GUI_Container__screen__moistureContainer, 70, 28 );
 
        GUI_Image__screen__moistureImg = lv_image_create( GUI_Container__screen__moistureContainer );
        lv_obj_add_flag( GUI_Image__screen__moistureImg, LV_OBJ_FLAG_ADV_HITTEST );
        lv_obj_remove_flag( GUI_Image__screen__moistureImg, LV_OBJ_FLAG_SCROLLABLE );
        lv_obj_set_align( GUI_Image__screen__moistureImg, LV_ALIGN_CENTER );
-       lv_obj_set_size( GUI_Image__screen__moistureImg, 30, 30 );
+       lv_obj_set_size( GUI_Image__screen__moistureImg, 24, 24 );
+       lv_img_set_zoom( GUI_Image__screen__moistureImg, 204 );
 
        GUI_Label__screen__moisture = lv_label_create( GUI_Container__screen__moistureContainer );
        lv_obj_set_align( GUI_Label__screen__moisture, LV_ALIGN_CENTER );
@@ -71,34 +74,38 @@ void GUI_initScreen__screen () {
      lv_obj_remove_flag( GUI_Container__screen__controlleersContainer, LV_OBJ_FLAG_SCROLLABLE );
      lv_obj_set_align( GUI_Container__screen__controlleersContainer, LV_ALIGN_CENTER );
      lv_obj_set_pos( GUI_Container__screen__controlleersContainer, 3, 93 );
-     lv_obj_set_size( GUI_Container__screen__controlleersContainer, 155, 25 );
+     lv_obj_set_size( GUI_Container__screen__controlleersContainer, 160, 30 );
 
       GUI_Image__screen__moodImg = lv_image_create( GUI_Container__screen__controlleersContainer );
       lv_obj_add_flag( GUI_Image__screen__moodImg, LV_OBJ_FLAG_ADV_HITTEST );
       lv_obj_remove_flag( GUI_Image__screen__moodImg, LV_OBJ_FLAG_SCROLLABLE );
       lv_obj_set_align( GUI_Image__screen__moodImg, LV_ALIGN_CENTER );
-      lv_obj_set_size( GUI_Image__screen__moodImg, 30, 30 );
+      lv_obj_set_size( GUI_Image__screen__moodImg, 24, 24 );
+      lv_img_set_zoom( GUI_Image__screen__moodImg, 204 );
       lv_obj_add_event_cb( GUI_Image__screen__moodImg, GUI_event__Image__screen__moodImg__Clicked, LV_EVENT_CLICKED, NULL );
 
       GUI_Image__screen__fanImg = lv_image_create( GUI_Container__screen__controlleersContainer );
       lv_obj_add_flag( GUI_Image__screen__fanImg, LV_OBJ_FLAG_ADV_HITTEST );
       lv_obj_remove_flag( GUI_Image__screen__fanImg, LV_OBJ_FLAG_SCROLLABLE );
       lv_obj_set_align( GUI_Image__screen__fanImg, LV_ALIGN_CENTER );
-      lv_obj_set_size( GUI_Image__screen__fanImg, 30, 30 );
+      lv_obj_set_size( GUI_Image__screen__fanImg, 24, 24 );
+      lv_img_set_zoom( GUI_Image__screen__fanImg, 204 );
       lv_obj_add_event_cb( GUI_Image__screen__fanImg, GUI_event__Image__screen__fanImg__Clicked, LV_EVENT_CLICKED, NULL );
 
       GUI_Image__screen__pumpImg = lv_image_create( GUI_Container__screen__controlleersContainer );
       lv_obj_add_flag( GUI_Image__screen__pumpImg, LV_OBJ_FLAG_ADV_HITTEST );
       lv_obj_remove_flag( GUI_Image__screen__pumpImg, LV_OBJ_FLAG_SCROLLABLE );
       lv_obj_set_align( GUI_Image__screen__pumpImg, LV_ALIGN_CENTER );
-      lv_obj_set_size( GUI_Image__screen__pumpImg, 30, 30 );
+      lv_obj_set_size( GUI_Image__screen__pumpImg, 24, 24 );
+      lv_img_set_zoom( GUI_Image__screen__pumpImg, 204 );
       lv_obj_add_event_cb( GUI_Image__screen__pumpImg, GUI_event__Image__screen__pumpImg__Clicked, LV_EVENT_CLICKED, NULL );
 
       GUI_Image__screen__powerImg = lv_image_create( GUI_Container__screen__controlleersContainer );
       lv_obj_add_flag( GUI_Image__screen__powerImg, LV_OBJ_FLAG_ADV_HITTEST );
       lv_obj_remove_flag( GUI_Image__screen__powerImg, LV_OBJ_FLAG_SCROLLABLE );
       lv_obj_set_align( GUI_Image__screen__powerImg, LV_ALIGN_CENTER );
-      lv_obj_set_size( GUI_Image__screen__powerImg, 30, 30 );
+      lv_obj_set_size( GUI_Image__screen__powerImg, 24, 24 );
+      lv_img_set_zoom( GUI_Image__screen__powerImg, 204 );
       lv_obj_add_event_cb( GUI_Image__screen__powerImg, GUI_event__Image__screen__powerImg__Clicked, LV_EVENT_CLICKED, NULL );
 
 
@@ -130,7 +137,7 @@ void GUI_initScreenStyles__screen () {
 
       lv_obj_add_style( GUI_Container__screen__moistureContainer, &GUI_Style__class_JqUcMs1ZNPRfQq__, LV_PART_MAIN | LV_STATE_DEFAULT );
 
-       lv_image_set_src( GUI_Image__screen__moistureImg, &winter );
+       lv_image_set_src( GUI_Image__screen__moistureImg, &pump );
 
        lv_obj_add_style( GUI_Label__screen__moisture, &GUI_Style__class_MsKIDbZdEXuzIO__, LV_PART_MAIN | LV_STATE_DEFAULT );
 
