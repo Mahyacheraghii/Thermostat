@@ -316,8 +316,14 @@ STEP 11 (MQTT/DASHBOARD):
 
 ## PROJECT TODO LIST (BUGS / GAPS)
 
-0. Get a stable 5V supply for the relay board (enough current for 4 relays).
-1. Run MQTT broker with WebSockets enabled and ensure host/port match device/webDashboard config.(to-do)
-2. Flash firmware to ESP32 and verify Wi‑Fi + MQTT connectivity on hardware.(to-do)
-3. Validate sensors + relay outputs on hardware (SHT3x readings, heater/cooler/fan/pump behavior, OFF fail‑safe).(to-do)
-4. Run touch calibration on first boot because of using XPT2046. (to-do)
+- Fix LCD touch.
+- try the other LCD
+- Run touch calibration on first boot because of using XPT2046.
+
+- Connect to Wi-Fi and MQTT server on device.
+- Check web dashboard and device connectivity via MQTT to have integrated data.
+
+- Find Female DC Jack and get 5V adaptor for relays.
+- Check relays to work fine.
+
+- fan speed?
