@@ -11,9 +11,23 @@
 // Use wrapper that includes real drivers when available or provides shims
 #include "touch_drivers.h"
 
-// Pins from rules: T_CS -> GPIO5, T_IRQ -> GPIO33, SPI uses standard MOSI/MISO/SCK
+// Pins from rules: T_CS -> GPIO5, T_IRQ -> GPIO33, SPI uses standard MOSI/MISO/SCK.
+// Default to polling to avoid missed IRQ issues; set TOUCH_USE_IRQ=1 to enable.
 #define T_CS_PIN 5
+#ifndef TOUCH_TFT_CS_PIN
+#define TOUCH_TFT_CS_PIN 15
+#endif
+#ifndef TOUCH_DEBUG
+#define TOUCH_DEBUG 0
+#endif
+#ifndef TOUCH_USE_IRQ
+#define TOUCH_USE_IRQ 0
+#endif
+#if TOUCH_USE_IRQ
 #define T_IRQ_PIN 33
+#else
+#define T_IRQ_PIN 255
+#endif
 
 static XPT2046_Touchscreen ts(T_CS_PIN, T_IRQ_PIN);
 
@@ -73,9 +87,19 @@ static void touchSaveCalibration()
 
 void touchInit()
 {
-    SPI.begin();
+    pinMode(T_CS_PIN, OUTPUT);
+    digitalWrite(T_CS_PIN, HIGH);
+    // Explicit VSPI pins to avoid ambiguity with other SPI users.
+    SPI.begin(18, 19, 23);
+    SPI.setFrequency(1000000);
+    pinMode(TOUCH_TFT_CS_PIN, OUTPUT);
+    digitalWrite(TOUCH_TFT_CS_PIN, HIGH);
     ts.begin();
+    ts.setRotation(3);
     touchLoadCalibration();
+#if TOUCH_DEBUG
+    Serial.println("Touch init: XPT2046 polling mode");
+#endif
 }
 
 static void touchCalSetState(CalState next)
@@ -170,7 +194,27 @@ void touchUpdate()
         s_touched = false;
         return;
     }
-    if (ts.touched())
+    // Ensure the display is deselected while reading touch to avoid bus contention.
+    digitalWrite(TOUCH_TFT_CS_PIN, HIGH);
+    bool touched = ts.touched();
+#if TOUCH_DEBUG
+    static uint32_t last_log_ms = 0;
+    const uint32_t now = millis();
+    if (now - last_log_ms >= 500)
+    {
+        TS_Point dbg = ts.getPoint();
+        Serial.print("touch raw ");
+        Serial.print(dbg.x);
+        Serial.print(",");
+        Serial.print(dbg.y);
+        Serial.print(" z=");
+        Serial.print(dbg.z);
+        Serial.print(" touched=");
+        Serial.println(touched ? "1" : "0");
+        last_log_ms = now;
+    }
+#endif
+    if (touched)
     {
         TS_Point p = ts.getPoint();
         // Raw X/Y need mapping depending on wiring; try simple mapping and clip.
