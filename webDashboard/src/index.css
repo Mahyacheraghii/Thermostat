@@ -1,0 +1,34 @@
+/* Tailwind directives (required for Tailwind processing) */
+@import "tailwindcss";
+
+/* Custom root after Tailwind base so our theme variables and overrides load after base */
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #000000;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+}
+
+button {
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #000000;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #ffffff;
+    background-color: #000000;
+  }
+}
