@@ -57,23 +57,23 @@ void GUI_initGlobalStyles () {
     lv_style_set_text_align( &GUI_Style__class_MsKIDbZdEXuzIO__, LV_TEXT_ALIGN_LEFT );
 
     lv_style_init( &GUI_Style__class_0TWSkus0ZPqgtj__ );
-    lv_style_set_text_font( &GUI_Style__class_0TWSkus0ZPqgtj__, &lv_font_montserrat_14 );
+    lv_style_set_text_font( &GUI_Style__class_0TWSkus0ZPqgtj__, &font_4_1 );
     lv_style_set_text_color( &GUI_Style__class_0TWSkus0ZPqgtj__, lv_color_make(255,255,255) );
     lv_style_set_text_opa( &GUI_Style__class_0TWSkus0ZPqgtj__, 255 );
     lv_style_set_text_letter_space( &GUI_Style__class_0TWSkus0ZPqgtj__, 0 );
     lv_style_set_text_line_space( &GUI_Style__class_0TWSkus0ZPqgtj__, 0 );
-    lv_style_set_text_align( &GUI_Style__class_0TWSkus0ZPqgtj__, LV_TEXT_ALIGN_LEFT );
+    lv_style_set_text_align( &GUI_Style__class_0TWSkus0ZPqgtj__, LV_TEXT_ALIGN_CENTER );
 
     lv_style_init( &GUI_Style__class_VRI9xFdITfSk2x__ );
-    lv_style_set_text_font( &GUI_Style__class_VRI9xFdITfSk2x__, &lv_font_montserrat_14 );
+    lv_style_set_text_font( &GUI_Style__class_VRI9xFdITfSk2x__, &font_3 );
     lv_style_set_text_color( &GUI_Style__class_VRI9xFdITfSk2x__, lv_color_make(255,255,255) );
     lv_style_set_text_opa( &GUI_Style__class_VRI9xFdITfSk2x__, 255 );
     lv_style_set_text_letter_space( &GUI_Style__class_VRI9xFdITfSk2x__, 0 );
     lv_style_set_text_line_space( &GUI_Style__class_VRI9xFdITfSk2x__, 0 );
-    lv_style_set_text_align( &GUI_Style__class_VRI9xFdITfSk2x__, LV_TEXT_ALIGN_LEFT );
+    lv_style_set_text_align( &GUI_Style__class_VRI9xFdITfSk2x__, LV_TEXT_ALIGN_CENTER );
 
     lv_style_init( &GUI_Style__class_1nSloISkFO20jp__ );
-    lv_style_set_text_font( &GUI_Style__class_1nSloISkFO20jp__, &lv_font_montserrat_14 );
+    lv_style_set_text_font( &GUI_Style__class_1nSloISkFO20jp__, &regular_text_1 );
     lv_style_set_text_color( &GUI_Style__class_1nSloISkFO20jp__, lv_color_make(255,255,255) );
     lv_style_set_text_opa( &GUI_Style__class_1nSloISkFO20jp__, 255 );
     lv_style_set_text_letter_space( &GUI_Style__class_1nSloISkFO20jp__, 0 );
@@ -90,4 +90,3 @@ void GUI_initGlobalStyles () {
     lv_style_set_layout( &GUI_Style__class_Mjy6X8hngx7TUa__, LV_LAYOUT_FLEX );
 
 }
-
