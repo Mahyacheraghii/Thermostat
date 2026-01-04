@@ -35,14 +35,15 @@ void GUI_initScreen__screen () {
      lv_obj_remove_flag( GUI_Container__screen__DataContainer, LV_OBJ_FLAG_CLICKABLE );
      lv_obj_remove_flag( GUI_Container__screen__DataContainer, LV_OBJ_FLAG_SCROLLABLE );
      lv_obj_set_align( GUI_Container__screen__DataContainer, LV_ALIGN_CENTER );
-     lv_obj_set_pos( GUI_Container__screen__DataContainer, 1, 10 );
-     lv_obj_set_size( GUI_Container__screen__DataContainer, 61, 129 );
+     lv_obj_set_pos( GUI_Container__screen__DataContainer, 0, -5 );
+     lv_obj_set_size( GUI_Container__screen__DataContainer, 200, 140 );
 
       GUI_Container__screen__moistureContainer = lv_obj_create( GUI_Container__screen__DataContainer );
       lv_obj_remove_style_all( GUI_Container__screen__moistureContainer );
       lv_obj_remove_flag( GUI_Container__screen__moistureContainer, LV_OBJ_FLAG_CLICKABLE );
       lv_obj_remove_flag( GUI_Container__screen__moistureContainer, LV_OBJ_FLAG_SCROLLABLE );
       lv_obj_set_align( GUI_Container__screen__moistureContainer, LV_ALIGN_CENTER );
+      lv_obj_set_pos( GUI_Container__screen__moistureContainer, 0, 55 );
       lv_obj_set_size( GUI_Container__screen__moistureContainer, 70, 28 );
 
        GUI_Image__screen__moistureImg = lv_image_create( GUI_Container__screen__moistureContainer );
@@ -58,14 +59,17 @@ void GUI_initScreen__screen () {
 
       GUI_Label__screen__currentTemperature = lv_label_create( GUI_Container__screen__DataContainer );
       lv_obj_set_align( GUI_Label__screen__currentTemperature, LV_ALIGN_CENTER );
+      lv_obj_set_pos( GUI_Label__screen__currentTemperature, 0, 22 );
       lv_obj_set_size( GUI_Label__screen__currentTemperature, LV_SIZE_CONTENT, LV_SIZE_CONTENT );
 
       GUI_Label__screen__setTemperature = lv_label_create( GUI_Container__screen__DataContainer );
       lv_obj_set_align( GUI_Label__screen__setTemperature, LV_ALIGN_CENTER );
+      lv_obj_set_pos( GUI_Label__screen__setTemperature, 0, -6 );
       lv_obj_set_size( GUI_Label__screen__setTemperature, LV_SIZE_CONTENT, LV_SIZE_CONTENT );
 
       GUI_Label__screen__set_to = lv_label_create( GUI_Container__screen__DataContainer );
       lv_obj_set_align( GUI_Label__screen__set_to, LV_ALIGN_CENTER );
+      lv_obj_set_pos( GUI_Label__screen__set_to, 0, -32 );
       lv_obj_set_size( GUI_Label__screen__set_to, LV_SIZE_CONTENT, LV_SIZE_CONTENT );
 
      GUI_Container__screen__controlleersContainer = lv_obj_create( GUI_Screen__screen );
@@ -128,12 +132,16 @@ void GUI_initScreenStyles__screen () {
      lv_image_set_src( GUI_Image__screen__dashboardImg, &dashboard );
 
      lv_image_set_src( GUI_Image__screen__wifiImage, &wifi );
+     lv_obj_set_style_bg_opa( GUI_Image__screen__wifiImage, 0, LV_PART_MAIN | LV_STATE_DEFAULT );
+     lv_obj_set_style_border_width( GUI_Image__screen__wifiImage, 0, LV_PART_MAIN | LV_STATE_DEFAULT );
+     lv_obj_set_style_outline_width( GUI_Image__screen__wifiImage, 0, LV_PART_MAIN | LV_STATE_DEFAULT );
 
      lv_obj_add_style( GUI_Arc__screen__arc, &GUI_Style__class_wKRNl64hJph3yK__, LV_PART_MAIN | LV_STATE_DEFAULT );
      lv_obj_add_style( GUI_Arc__screen__arc, &GUI_Style__class_BRPSMN5kLlcn7C__, LV_PART_INDICATOR | LV_STATE_DEFAULT );
      lv_obj_add_style( GUI_Arc__screen__arc, &GUI_Style__class_THgObigAvqHpFq__, LV_PART_KNOB | LV_STATE_DEFAULT );
 
      lv_obj_add_style( GUI_Container__screen__DataContainer, &GUI_Style__class_kdhj6JKmHjoRTB__, LV_PART_MAIN | LV_STATE_DEFAULT );
+     lv_obj_set_layout( GUI_Container__screen__DataContainer, LV_LAYOUT_NONE );
 
       lv_obj_add_style( GUI_Container__screen__moistureContainer, &GUI_Style__class_JqUcMs1ZNPRfQq__, LV_PART_MAIN | LV_STATE_DEFAULT );
 

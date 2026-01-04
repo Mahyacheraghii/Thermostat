@@ -44,11 +44,11 @@ static void uiUpdateLabels()
 
     if (GUI_Label__screen__currentTemperature)
     {
-        char buf[8];
+        char buf[24];
         if (!isnan(gCurrentTempC))
-            snprintf(buf, sizeof(buf), "%.1f°", gCurrentTempC);
+            snprintf(buf, sizeof(buf), "current Temp: %.1f", gCurrentTempC);
         else
-            snprintf(buf, sizeof(buf), "--.-°");
+            snprintf(buf, sizeof(buf), "current Temp: --");
         lv_label_set_text(GUI_Label__screen__currentTemperature, buf);
     }
 
@@ -66,9 +66,9 @@ static void uiUpdateLabels()
     {
         char buf[8];
         if (!isnan(gSetPointC))
-            snprintf(buf, sizeof(buf), "%.1f°", gSetPointC);
+            snprintf(buf, sizeof(buf), "%d", (int)gSetPointC);
         else
-            snprintf(buf, sizeof(buf), "--.-°");
+            snprintf(buf, sizeof(buf), "--");
         lv_label_set_text(GUI_Label__screen__setTemperature, buf);
     }
 
@@ -85,7 +85,7 @@ static void uiUpdateLabels()
 
     if (GUI_Image__screen__fanImg)
     {
-        if (gCurrentState == ThermostatState::FAN_ONLY)
+        if (gFanSpeed != FanSpeed::OFF)
             lv_obj_add_state(GUI_Image__screen__fanImg, LV_STATE_CHECKED);
         else
             lv_obj_clear_state(GUI_Image__screen__fanImg, LV_STATE_CHECKED);
@@ -93,10 +93,12 @@ static void uiUpdateLabels()
 
     if (GUI_Image__screen__fanImg)
     {
-        if (gCurrentState == ThermostatState::FAN_ONLY)
+        if (gFanSpeed == FanSpeed::FAST)
             lv_obj_set_style_opa(GUI_Image__screen__fanImg, LV_OPA_100, LV_PART_MAIN | LV_STATE_DEFAULT);
-        else
+        else if (gFanSpeed == FanSpeed::SLOW)
             lv_obj_set_style_opa(GUI_Image__screen__fanImg, LV_OPA_70, LV_PART_MAIN | LV_STATE_DEFAULT);
+        else
+            lv_obj_set_style_opa(GUI_Image__screen__fanImg, LV_OPA_50, LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 }
 
