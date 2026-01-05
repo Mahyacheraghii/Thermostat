@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import "./index.css";
-import { FiMenu, FiSun, FiDroplet, FiPower } from "react-icons/fi";
-import { FaFan, FaRegSnowflake } from "react-icons/fa";
+import { FiDroplet, FiPower } from "react-icons/fi";
+import { FaFan } from "react-icons/fa";
 import ArcDisplay from "./components/ArcDisplay";
 import { LuLink, LuLink2Off } from "react-icons/lu";
 import { createMqttClient } from "./services/mqttClient";
@@ -15,7 +15,6 @@ export default function App() {
   const [fanDirection, setFanDirection] = useState("up");
   const [isPumpOn, setIsPumpOn] = useState(false);
   const [isPowerOn, setIsPowerOn] = useState(true);
-  const [mode, setMode] = useState("summer");
   const [mqttStatus, setMqttStatus] = useState("disconnected");
   const [deviceStatus, setDeviceStatus] = useState("unknown");
   const mqttRef = useRef(null);
@@ -64,8 +63,6 @@ export default function App() {
         else if (key === "status") {
           setDeviceStatus(msg);
         }
-        else if (key === "mode")
-          setMode(msg === "winter" ? "winter" : "summer");
         else if (key === "state") {
           setIsPowerOn(msg !== "off");
           if (!hasFanSpeedTelemetry.current) {
@@ -102,33 +99,6 @@ export default function App() {
     client.publishCommand(cmd, payload);
   };
 
-  const cycleFanSpeed = () => {
-    if (!isPowerOn) return;
-    let nextSpeed = "off";
-    let payload = "0";
-    let nextDirection = fanDirection;
-    if (fanSpeed === "off") {
-      nextSpeed = "slow";
-      payload = "1";
-      nextDirection = "up";
-    } else if (fanSpeed === "slow") {
-      if (fanDirection === "up") {
-        nextSpeed = "fast";
-        payload = "2";
-      } else {
-        nextSpeed = "off";
-        payload = "0";
-      }
-    } else if (fanSpeed === "fast") {
-      nextSpeed = "slow";
-      payload = "1";
-      nextDirection = "down";
-    }
-    setFanSpeed(nextSpeed);
-    setFanDirection(nextDirection);
-    publishCommand("fan_only", payload);
-  };
-
   return (
     <div className=" w-full text-white flex flex-col items-center justify-between px-2 space-y-47">
       {/* wifi + settings */}
@@ -161,32 +131,9 @@ export default function App() {
       </div>
       {/* Controls */}
       <div className="flex flex-row items-center justify-between w-full px-7">
-        {mode === "summer" ? (
-          <FiSun
-            size={28}
-            className={`cursor-pointer ${
-              isPowerOn ? "text-yellow-200 " : "text-white"
-            }`}
-            onClick={() => {
-              setMode("winter");
-              publishCommand("mode", "winter");
-            }}
-          />
-        ) : (
-          <FaRegSnowflake
-            size={28}
-            className={`cursor-pointer ${
-              isPowerOn ? "text-blue-200 " : "text-white"
-            }`}
-            onClick={() => {
-              setMode("summer");
-              publishCommand("mode", "summer");
-            }}
-          />
-        )}
         <FiDroplet
           size={28}
-          className={`cursor-pointer ${
+          className={`${
             isPowerOn
               ? isPumpOn
                 ? "text-blue-200 animate-pulse"
@@ -196,7 +143,7 @@ export default function App() {
         />
         <FaFan
           size={28}
-          className={`cursor-pointer ${
+          className={`${
             isPowerOn
               ? fanSpeed === "slow"
                 ? "text-blue-200 animate-[spin_6s_linear_infinite]"
@@ -205,7 +152,6 @@ export default function App() {
                   : "text-white"
               : "text-white"
           }`}
-          onClick={cycleFanSpeed}
         />
         <FiPower
           size={28}
@@ -217,7 +163,7 @@ export default function App() {
               publishCommand("power", "0");
               setIsPowerOn(false);
             } else {
-              publishCommand("mode", mode);
+              publishCommand("power", "1");
               setIsPowerOn(true);
             }
           }}
