@@ -10,4 +10,4 @@
 
 #define SPI_FREQUENCY 50000000 // ۴۰ مگاهرتز (حداکثر استاندارد)
 #define SPI_READ_FREQUENCY 20000000
-#define SPI_TOUCH_FREQUENCY 2500000 // این رو بالا نبرید! چیپ تاچ کنده.
+#define SPI_TOUCH_FREQUENCY 2000000 // این رو بالا نبرید! چیپ تاچ کنده.

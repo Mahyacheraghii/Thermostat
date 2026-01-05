@@ -31,6 +31,16 @@ static void wifiClearCredentials()
     prefs.end();
 }
 
+static void wifiLoadCredentials(String &ssid, String &pass)
+{
+    Preferences prefs;
+    if (!prefs.begin("wifi", true))
+        return;
+    ssid = prefs.getString("ssid", "");
+    pass = prefs.getString("pass", "");
+    prefs.end();
+}
+
 static uint32_t s_wifiConnectStartMs = 0;
 static bool s_wifiConnectInProgress = false;
 
@@ -125,6 +135,19 @@ void ui_on_wifi_icon_pressed(lv_event_t *e)
         lv_screen_load(GUI_Screen__wifi);
         if (GUI_Keyboard__wifi__keyboard)
             lv_obj_add_flag(GUI_Keyboard__wifi__keyboard, LV_OBJ_FLAG_HIDDEN);
+
+        if (GUI_TextArea__wifi__ssid && GUI_TextArea__wifi__pass)
+        {
+            String ssid;
+            String pass;
+            wifiLoadCredentials(ssid, pass);
+            if (ssid.length() == 0)
+                ssid = WIFI_SSID;
+            if (pass.length() == 0)
+                pass = WIFI_PASSWORD;
+            lv_textarea_set_text(GUI_TextArea__wifi__ssid, ssid.c_str());
+            lv_textarea_set_text(GUI_TextArea__wifi__pass, pass.c_str());
+        }
     }
 }
 

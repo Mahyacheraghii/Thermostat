@@ -167,7 +167,7 @@ void uiUpdate()
     static uint32_t lastWifiCheckMs = 0;
     const uint32_t now = millis();
 
-    if (now - lastUiUpdateMs >= 100)
+    if (now - lastUiUpdateMs >= 1)
     {
         lastUiUpdateMs = now;
         uiUpdateLabels();

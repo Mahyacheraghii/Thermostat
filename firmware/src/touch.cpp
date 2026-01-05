@@ -137,7 +137,7 @@ void touchUpdate()
 
     // Lower threshold for more sensitive touch (try 300-600)
     // Adjust based on your specific touch panel
-    const uint16_t TOUCH_THRESHOLD = 400;
+    const uint16_t TOUCH_THRESHOLD = 100;
 
     if (tft.getTouch(&x, &y, TOUCH_THRESHOLD))
     {
@@ -148,7 +148,7 @@ void touchUpdate()
         uint32_t now = millis();
 
         // Debounce: ignore touches within 30ms (reduced from 50ms for better responsiveness)
-        if (now - lastTouchTime > 30)
+        if (now - lastTouchTime > 1)
         {
             // Clamp coordinates to screen bounds
             x = constrain(x, 0, kTftWidth - 1);
