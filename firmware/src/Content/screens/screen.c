@@ -7,12 +7,13 @@ void GUI_initScreen__screen () {
     lv_obj_remove_flag( GUI_Screen__screen, LV_OBJ_FLAG_SCROLLABLE );
      GUI_Image__screen__dashboardImg = lv_image_create( GUI_Screen__screen );
      lv_obj_add_flag( GUI_Image__screen__dashboardImg, LV_OBJ_FLAG_ADV_HITTEST );
+     lv_obj_add_flag( GUI_Image__screen__dashboardImg, LV_OBJ_FLAG_CLICKABLE );
      lv_obj_remove_flag( GUI_Image__screen__dashboardImg, LV_OBJ_FLAG_SCROLLABLE );
      lv_obj_set_align( GUI_Image__screen__dashboardImg, LV_ALIGN_CENTER );
      lv_obj_set_pos( GUI_Image__screen__dashboardImg, 141, -100 );
      lv_obj_set_size( GUI_Image__screen__dashboardImg, 24, 24 );
      lv_img_set_zoom( GUI_Image__screen__dashboardImg, 204 );
-     lv_obj_add_event_cb( GUI_Image__screen__dashboardImg, GUI_event__Image__screen__dashboardImg__Clicked, LV_EVENT_CLICKED, NULL );
+     lv_obj_add_event_cb( GUI_Image__screen__dashboardImg, GUI_event__Image__screen__dashboardImg__Clicked, LV_EVENT_PRESSED, NULL );
 
     GUI_Image__screen__wifiImage = lv_image_create( GUI_Screen__screen );
     lv_obj_add_flag( GUI_Image__screen__wifiImage, LV_OBJ_FLAG_ADV_HITTEST );
@@ -21,7 +22,7 @@ void GUI_initScreen__screen () {
     lv_obj_set_pos( GUI_Image__screen__wifiImage, -140, -100 );
     lv_obj_set_size( GUI_Image__screen__wifiImage, 24, 24 );
     lv_img_set_zoom( GUI_Image__screen__wifiImage, 204 );
-    lv_obj_add_event_cb( GUI_Image__screen__wifiImage, GUI_event__Image__screen__wifiImage__Clicked, LV_EVENT_CLICKED, NULL );
+    lv_obj_add_event_cb( GUI_Image__screen__wifiImage, GUI_event__Image__screen__wifiImage__Clicked, LV_EVENT_PRESSED, NULL );
 
      GUI_Arc__screen__arc = lv_arc_create( GUI_Screen__screen );
      lv_arc_set_value( GUI_Arc__screen__arc, 50 );
@@ -29,7 +30,7 @@ void GUI_initScreen__screen () {
      lv_obj_set_align( GUI_Arc__screen__arc, LV_ALIGN_CENTER );
      lv_obj_set_pos( GUI_Arc__screen__arc, 1, -13 );
      lv_obj_set_size( GUI_Arc__screen__arc, 144, 142 );
-     lv_obj_add_event_cb( GUI_Arc__screen__arc, GUI_event__Arc__screen__arc__Clicked, LV_EVENT_CLICKED, NULL );
+     lv_obj_add_event_cb( GUI_Arc__screen__arc, GUI_event__Arc__screen__arc__Clicked, LV_EVENT_PRESSED, NULL );
 
      GUI_Container__screen__DataContainer = lv_obj_create( GUI_Screen__screen );
      lv_obj_remove_style_all( GUI_Container__screen__DataContainer );
@@ -87,7 +88,7 @@ void GUI_initScreen__screen () {
       lv_obj_set_align( GUI_Image__screen__moodImg, LV_ALIGN_CENTER );
       lv_obj_set_size( GUI_Image__screen__moodImg, 24, 24 );
       lv_img_set_zoom( GUI_Image__screen__moodImg, 204 );
-      lv_obj_add_event_cb( GUI_Image__screen__moodImg, GUI_event__Image__screen__moodImg__Clicked, LV_EVENT_CLICKED, NULL );
+      lv_obj_add_event_cb( GUI_Image__screen__moodImg, GUI_event__Image__screen__moodImg__Clicked, LV_EVENT_PRESSED, NULL );
 
       GUI_Image__screen__fanImg = lv_image_create( GUI_Container__screen__controlleersContainer );
       lv_obj_add_flag( GUI_Image__screen__fanImg, LV_OBJ_FLAG_ADV_HITTEST );
@@ -95,7 +96,7 @@ void GUI_initScreen__screen () {
       lv_obj_set_align( GUI_Image__screen__fanImg, LV_ALIGN_CENTER );
       lv_obj_set_size( GUI_Image__screen__fanImg, 24, 24 );
       lv_img_set_zoom( GUI_Image__screen__fanImg, 204 );
-      lv_obj_add_event_cb( GUI_Image__screen__fanImg, GUI_event__Image__screen__fanImg__Clicked, LV_EVENT_CLICKED, NULL );
+      lv_obj_add_event_cb( GUI_Image__screen__fanImg, GUI_event__Image__screen__fanImg__Clicked, LV_EVENT_PRESSED, NULL );
 
       GUI_Image__screen__pumpImg = lv_image_create( GUI_Container__screen__controlleersContainer );
       lv_obj_add_flag( GUI_Image__screen__pumpImg, LV_OBJ_FLAG_ADV_HITTEST );
@@ -103,7 +104,7 @@ void GUI_initScreen__screen () {
       lv_obj_set_align( GUI_Image__screen__pumpImg, LV_ALIGN_CENTER );
       lv_obj_set_size( GUI_Image__screen__pumpImg, 24, 24 );
       lv_img_set_zoom( GUI_Image__screen__pumpImg, 204 );
-      lv_obj_add_event_cb( GUI_Image__screen__pumpImg, GUI_event__Image__screen__pumpImg__Clicked, LV_EVENT_CLICKED, NULL );
+      lv_obj_add_event_cb( GUI_Image__screen__pumpImg, GUI_event__Image__screen__pumpImg__Clicked, LV_EVENT_PRESSED, NULL );
 
       GUI_Image__screen__powerImg = lv_image_create( GUI_Container__screen__controlleersContainer );
       lv_obj_add_flag( GUI_Image__screen__powerImg, LV_OBJ_FLAG_ADV_HITTEST );
@@ -111,7 +112,7 @@ void GUI_initScreen__screen () {
       lv_obj_set_align( GUI_Image__screen__powerImg, LV_ALIGN_CENTER );
       lv_obj_set_size( GUI_Image__screen__powerImg, 24, 24 );
       lv_img_set_zoom( GUI_Image__screen__powerImg, 204 );
-      lv_obj_add_event_cb( GUI_Image__screen__powerImg, GUI_event__Image__screen__powerImg__Clicked, LV_EVENT_CLICKED, NULL );
+      lv_obj_add_event_cb( GUI_Image__screen__powerImg, GUI_event__Image__screen__powerImg__Clicked, LV_EVENT_PRESSED, NULL );
 
 
     GUI_initScreenStyles__screen();
@@ -176,7 +177,7 @@ void GUI_initScreen__wifi () {
     lv_obj_set_align( GUI_Button__wifi__backBtn, LV_ALIGN_TOP_LEFT );
     lv_obj_set_pos( GUI_Button__wifi__backBtn, 10, 8 );
     lv_obj_set_size( GUI_Button__wifi__backBtn, 36, 28 );
-    lv_obj_add_event_cb( GUI_Button__wifi__backBtn, GUI_event__Button__wifi__backBtn__Clicked, LV_EVENT_CLICKED, NULL );
+    lv_obj_add_event_cb( GUI_Button__wifi__backBtn, GUI_event__Button__wifi__backBtn__Clicked, LV_EVENT_PRESSED, NULL );
 
     GUI_Label__wifi__backLabel = lv_label_create( GUI_Button__wifi__backBtn );
     lv_label_set_text( GUI_Label__wifi__backLabel, "<" );
@@ -208,7 +209,7 @@ void GUI_initScreen__wifi () {
     lv_obj_set_align( GUI_Button__wifi__connectBtn, LV_ALIGN_TOP_MID );
     lv_obj_set_pos( GUI_Button__wifi__connectBtn, 0, 130 );
     lv_obj_set_size( GUI_Button__wifi__connectBtn, 140, 32 );
-    lv_obj_add_event_cb( GUI_Button__wifi__connectBtn, GUI_event__Button__wifi__connectBtn__Clicked, LV_EVENT_CLICKED, NULL );
+    lv_obj_add_event_cb( GUI_Button__wifi__connectBtn, GUI_event__Button__wifi__connectBtn__Clicked, LV_EVENT_PRESSED, NULL );
 
     GUI_Label__wifi__connectLabel = lv_label_create( GUI_Button__wifi__connectBtn );
     lv_label_set_text( GUI_Label__wifi__connectLabel, "Connect" );
@@ -218,7 +219,7 @@ void GUI_initScreen__wifi () {
     lv_obj_set_align( GUI_Button__wifi__clearBtn, LV_ALIGN_TOP_MID );
     lv_obj_set_pos( GUI_Button__wifi__clearBtn, 0, 168 );
     lv_obj_set_size( GUI_Button__wifi__clearBtn, 140, 28 );
-    lv_obj_add_event_cb( GUI_Button__wifi__clearBtn, GUI_event__Button__wifi__clearBtn__Clicked, LV_EVENT_CLICKED, NULL );
+    lv_obj_add_event_cb( GUI_Button__wifi__clearBtn, GUI_event__Button__wifi__clearBtn__Clicked, LV_EVENT_PRESSED, NULL );
 
     GUI_Label__wifi__clearLabel = lv_label_create( GUI_Button__wifi__clearBtn );
     lv_label_set_text( GUI_Label__wifi__clearLabel, "Clear Saved" );

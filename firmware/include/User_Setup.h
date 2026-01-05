@@ -7,6 +7,11 @@
 #define TFT_RST 4
 #define TOUCH_CS 5
 #define TOUCH_IRQ 33
-#define SPI_FREQUENCY 40000000      // افزایش چشمگیر سرعت رندر
-#define SPI_FREQUENCY 20000000      // ۲۰ مگاهرتز معمولاً نقطه امن سیم‌های جامپر است
-#define SPI_TOUCH_FREQUENCY 1000000 // این را اصلاً زیاد نکنید
+// برای سرعت عالی و روان بودن (۲۷ مگاهرتز)
+#define SPI_FREQUENCY 27000000
+
+// برای خواندن دیتا (۲۰ مگاهرتز)
+#define SPI_READ_FREQUENCY 20000000
+
+// برای لمس (بسیار مهم: این عدد باید کم باشد تا نویز نگیرد - ۲.۵ مگاهرتز)
+#define SPI_TOUCH_FREQUENCY 2500000

@@ -11,6 +11,7 @@ float gHysteresisC = DEFAULT_HYSTERESIS_C;
 bool gSetPointChanged = false;
 bool gFanOnlyRequested = false;
 bool gPowerOffRequested = false;
+bool gPowerOnRequested = false;
 bool gPumpDesired = false; // Decided only in PRESTART
 
 static ThermostatState s_lastState = ThermostatState::OFF;
@@ -59,6 +60,7 @@ void stateMachineInit()
     gSetPointChanged = false;
     gFanOnlyRequested = false;
     gPowerOffRequested = false;
+    gPowerOnRequested = false;
     gPumpDesired = false;
     gPrestartEnteredTime = 0;
 
@@ -101,6 +103,11 @@ void requestPowerOff()
     gPowerOffRequested = true;
 }
 
+void requestPowerOn()
+{
+    gPowerOnRequested = true;
+}
+
 
 void stateMachineUpdate()
 {
@@ -125,6 +132,21 @@ void stateMachineUpdate()
         gCurrentState = ThermostatState::OFF;
         gPowerOffRequested = false; // Consume the flag
         gPumpDesired = false;
+        outputsApplyState(gCurrentState);
+        logStateChangeIfNeeded();
+        return;
+    }
+
+    // ============================================================================
+    // GLOBAL: Power ON request (leave OFF and resume normal control)
+    // ============================================================================
+    if (gPowerOnRequested)
+    {
+        gPowerOnRequested = false;
+        gPumpDesired = false;
+        gCurrentState = ThermostatState::IDLE;
+        gSetPointChanged = false;
+        gFanOnlyRequested = false;
         outputsApplyState(gCurrentState);
         logStateChangeIfNeeded();
         return;

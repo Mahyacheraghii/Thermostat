@@ -20,6 +20,7 @@ extern float gHysteresisC;
 extern bool gSetPointChanged;
 extern bool gFanOnlyRequested;
 extern bool gPowerOffRequested;
+extern bool gPowerOnRequested;
 extern bool gPumpDesired;
 
 void stateMachineInit();
@@ -29,3 +30,4 @@ void setSetPoint(float celsius);
 void setHysteresis(float celsius);
 void requestFanOnly();
 void requestPowerOff();
+void requestPowerOn();

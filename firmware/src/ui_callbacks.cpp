@@ -97,7 +97,10 @@ void ui_on_fan_button_pressed(lv_event_t *e)
 void ui_on_power_button_pressed(lv_event_t *e)
 {
     (void)e;
-    requestPowerOff();
+    if (gCurrentState == ThermostatState::OFF)
+        requestPowerOn();
+    else
+        requestPowerOff();
 }
 
 // Calibration button pressed in UI -> run touch calibration routine.
