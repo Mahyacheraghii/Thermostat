@@ -3,7 +3,6 @@
 #include "sensors.h"
 
 ThermostatState gCurrentState = ThermostatState::IDLE;
-ThermostatMode gCurrentMode = ThermostatMode::WINTER;
 float gSetPointC = 22.0f;
 float gCurrentTempC = NAN;
 float gCurrentHumidity = NAN;
@@ -12,8 +11,40 @@ float gHysteresisC = DEFAULT_HYSTERESIS_C;
 bool gSetPointChanged = false;
 bool gFanOnlyRequested = false;
 bool gPowerOffRequested = false;
-bool gModeChanged = false;
 bool gPumpDesired = false; // Decided only in PRESTART
+
+static ThermostatState s_lastState = ThermostatState::OFF;
+
+static const char *stateName(ThermostatState state)
+{
+    switch (state)
+    {
+    case ThermostatState::IDLE:
+        return "IDLE";
+    case ThermostatState::PRESTART:
+        return "PRESTART";
+    case ThermostatState::COOLING_LOW:
+        return "COOLING_LOW";
+    case ThermostatState::COOLING_HIGH:
+        return "COOLING_HIGH";
+    case ThermostatState::FAN_ONLY:
+        return "FAN_ONLY";
+    case ThermostatState::OFF:
+        return "OFF";
+    default:
+        return "UNKNOWN";
+    }
+}
+
+static void logStateChangeIfNeeded()
+{
+    if (gCurrentState != s_lastState)
+    {
+        Serial.print("State -> ");
+        Serial.println(stateName(gCurrentState));
+        s_lastState = gCurrentState;
+    }
+}
 
 // PRESTART state management
 static uint32_t gPrestartEnteredTime = 0;
@@ -23,17 +54,16 @@ static const uint32_t SENSOR_TIMEOUT_MS = 3000; // fail-safe if no fresh data
 void stateMachineInit()
 {
     gCurrentState = ThermostatState::IDLE;
-    gCurrentMode = ThermostatMode::WINTER;
     gSetPointC = 22.0f;
     gHysteresisC = DEFAULT_HYSTERESIS_C;
     gSetPointChanged = false;
     gFanOnlyRequested = false;
     gPowerOffRequested = false;
-    gModeChanged = false;
     gPumpDesired = false;
     gPrestartEnteredTime = 0;
 
     outputsApplyState(gCurrentState);
+    s_lastState = gCurrentState;
 }
 
 // -------------------------
@@ -71,15 +101,6 @@ void requestPowerOff()
     gPowerOffRequested = true;
 }
 
-void requestModeChange(ThermostatMode newMode)
-{
-    // Update desired mode and set mode-changed flag; state machine will handle PRESTART
-    if (newMode != gCurrentMode)
-    {
-        gCurrentMode = newMode;
-        gModeChanged = true;
-    }
-}
 
 void stateMachineUpdate()
 {
@@ -90,7 +111,9 @@ void stateMachineUpdate()
     if (!sensorsAvailable() || (now - sensorsLastUpdateMs()) > SENSOR_TIMEOUT_MS)
     {
         gCurrentState = ThermostatState::OFF;
+        gPumpDesired = false;
         outputsApplyState(gCurrentState);
+        logStateChangeIfNeeded();
         return;
     }
 
@@ -101,263 +124,151 @@ void stateMachineUpdate()
     {
         gCurrentState = ThermostatState::OFF;
         gPowerOffRequested = false; // Consume the flag
+        gPumpDesired = false;
         outputsApplyState(gCurrentState);
+        logStateChangeIfNeeded();
         return;
     }
 
-    // ============================================================================
-    // GLOBAL: Mode change always goes to PRESTART
-    // ============================================================================
-    if (gModeChanged)
-    {
-        // Consume the flag, decide pump based on current mode/temps, then enter PRESTART
-        gModeChanged = false; // Consume the flag
-        // Decide pump: mode-driven. If in SUMMER and cooling likely, pump desired.
-        if (!isnan(gCurrentTempC) && !isnan(gSetPointC))
-        {
-            // Use hysteresis-aware "start cooling" condition:
-            // start cooling when currentTemp >= setPoint + hysteresis
-            if (gCurrentMode == ThermostatMode::SUMMER && (gCurrentTempC >= (gSetPointC + gHysteresisC)))
-                gPumpDesired = true;
-            else
-                gPumpDesired = false;
-        }
-        else
-        {
-            // Sensor missing: default to pump OFF for safety
-            gPumpDesired = false;
-        }
-        // Now enter PRESTART
-        gCurrentState = ThermostatState::PRESTART;
-        gPrestartEnteredTime = millis();
-        outputsApplyState(gCurrentState);
-        return;
-    }
+    auto tempValid = []() {
+        return !isnan(gCurrentTempC) && !isnan(gSetPointC);
+    };
 
-    // ============================================================================
-    // STATE MACHINE TRANSITIONS
-    // ============================================================================
+    auto desiredCoolingState = []() -> ThermostatState {
+        if (gCurrentTempC >= (gSetPointC + gHysteresisC))
+            return ThermostatState::COOLING_HIGH;
+        if (gCurrentTempC >= gSetPointC)
+            return ThermostatState::COOLING_LOW;
+        return ThermostatState::IDLE;
+    };
 
     switch (gCurrentState)
     {
     case ThermostatState::IDLE:
     {
-        // User requests FAN_ONLY: go to PRESTART first, then to FAN_ONLY
         if (gFanOnlyRequested)
         {
-            // Fan-only requested: decide pump first (OFF), then enter PRESTART
+            gCurrentState = ThermostatState::FAN_ONLY;
+            gFanOnlyRequested = false;
             gPumpDesired = false;
-            gCurrentState = ThermostatState::PRESTART;
-            gPrestartEnteredTime = millis();
-            gFanOnlyRequested = false; // Flag will be checked again in PRESTART
-            // Note: gFanOnlyRequested will be re-checked in PRESTART
+            break;
         }
-        // SetPoint changed: go to PRESTART to evaluate conditions
-        else if (gSetPointChanged)
+
+        if (gSetPointChanged && tempValid())
         {
-            // SetPoint changed: decide pump first, then enter PRESTART
-            if (!isnan(gCurrentTempC) && !isnan(gSetPointC))
+            if (desiredCoolingState() != ThermostatState::IDLE)
             {
-                if (gCurrentMode == ThermostatMode::SUMMER && (gCurrentTempC >= (gSetPointC + gHysteresisC)))
-                    gPumpDesired = true;
-                else
-                    gPumpDesired = false;
+                gCurrentState = ThermostatState::PRESTART;
+                gPrestartEnteredTime = millis();
+                gPumpDesired = true;
             }
-            else
-            {
-                gPumpDesired = false;
-            }
+            gSetPointChanged = false;
+            break;
+        }
+
+        if (tempValid() && desiredCoolingState() != ThermostatState::IDLE)
+        {
             gCurrentState = ThermostatState::PRESTART;
             gPrestartEnteredTime = millis();
-            gSetPointChanged = false; // Consume the flag
+            gPumpDesired = true;
         }
-        // Otherwise stay IDLE
         break;
     }
 
     case ThermostatState::PRESTART:
     {
-        uint32_t elapsedMs = millis() - gPrestartEnteredTime;
+        gPumpDesired = true;
 
-        // If pump was desired, perform priming for the configured duration.
-        // If pump not desired, skip priming and evaluate immediately.
-        if (gPumpDesired)
-        {
-            if (elapsedMs < PUMP_PRIMING_DURATION_MS)
-            {
-                // Stay in PRESTART while pump primes
-                break;
-            }
-        }
-
-        // Pump priming complete; now decide next state
-        bool winterMode = (gCurrentMode == ThermostatMode::WINTER);
-        bool summerMode = (gCurrentMode == ThermostatMode::SUMMER);
-        bool tempIsValid = !isnan(gCurrentTempC) && !isnan(gSetPointC);
-
-        // If temperature data is not valid, go to OFF (safe state)
-        if (!tempIsValid)
-        {
-            gCurrentState = ThermostatState::OFF;
-            break;
-        }
-
-        // Check if FAN_ONLY was requested during PRESTART
         if (gFanOnlyRequested)
         {
             gCurrentState = ThermostatState::FAN_ONLY;
-            gFanOnlyRequested = false; // Consume the flag
+            gFanOnlyRequested = false;
+            gPumpDesired = false;
             break;
         }
 
-        // Branch based on mode and hysteresis-aware setpoint comparison
-        // Heater should start when currentTemp <= setPoint - hysteresis
-        if (winterMode && (gCurrentTempC <= (gSetPointC - gHysteresisC)))
+        uint32_t elapsedMs = millis() - gPrestartEnteredTime;
+        if (elapsedMs < PUMP_PRIMING_DURATION_MS)
+            break;
+
+        if (!tempValid())
         {
-            gCurrentState = ThermostatState::HEATING;
+            gCurrentState = ThermostatState::OFF;
+            gPumpDesired = false;
+            break;
         }
-        // Cooler should start when currentTemp >= setPoint + hysteresis
-        else if (summerMode && (gCurrentTempC >= (gSetPointC + gHysteresisC)))
+
+        ThermostatState desired = desiredCoolingState();
+        if (desired == ThermostatState::IDLE)
         {
-            gCurrentState = ThermostatState::COOLING;
+            gCurrentState = ThermostatState::IDLE;
+            gPumpDesired = false;
         }
         else
         {
-            // Condition not met; return to IDLE
-            gCurrentState = ThermostatState::IDLE;
+            gCurrentState = desired;
+            gPumpDesired = true;
         }
-
-        gSetPointChanged = false; // Clear flag if it was set
+        gSetPointChanged = false;
         break;
     }
 
-    case ThermostatState::HEATING:
+    case ThermostatState::COOLING_LOW:
+    case ThermostatState::COOLING_HIGH:
     {
-        bool winterMode = (gCurrentMode == ThermostatMode::WINTER);
-        bool tempIsValid = !isnan(gCurrentTempC) && !isnan(gSetPointC);
-
-        // If temperature data is not valid, go to OFF (safe state)
-        if (!tempIsValid)
+        if (!tempValid())
         {
             gCurrentState = ThermostatState::OFF;
-            break;
-        }
-        // HYSTERESIS: if temperature reached setPoint + hysteresis, stop heating
-        if (gCurrentTempC >= (gSetPointC + gHysteresisC))
-        {
-            gCurrentState = ThermostatState::IDLE;
+            gPumpDesired = false;
             break;
         }
 
-        // SetPoint changed: re-evaluate whether heating should continue
-        if (gSetPointChanged)
-        {
-            if (winterMode && (gSetPointC > gCurrentTempC))
-            {
-                gSetPointChanged = false;
-                break; // stay HEATING
-            }
-            else
-            {
-                gCurrentState = ThermostatState::IDLE;
-                gSetPointChanged = false;
-                break;
-            }
-        }
-
-        // User requests FAN_ONLY: ensure pump is OFF first via PRESTART
         if (gFanOnlyRequested)
         {
-            gPumpDesired = false; // ensure pump OFF
-            gCurrentState = ThermostatState::PRESTART;
-            gPrestartEnteredTime = millis();
-            gFanOnlyRequested = false; // will be consumed in PRESTART
+            gCurrentState = ThermostatState::FAN_ONLY;
+            gFanOnlyRequested = false;
+            gPumpDesired = false;
             break;
         }
 
-        // Otherwise remain in HEATING
-        break;
-    }
-
-    case ThermostatState::COOLING:
-    {
-        bool summerMode = (gCurrentMode == ThermostatMode::SUMMER);
-        bool tempIsValid = !isnan(gCurrentTempC) && !isnan(gSetPointC);
-
-        // If temperature data is not valid, go to OFF (safe state)
-        if (!tempIsValid)
-        {
-            gCurrentState = ThermostatState::OFF;
-            break;
-        }
-        // HYSTERESIS: if temperature fallen to setPoint - hysteresis, stop cooling
         if (gCurrentTempC <= (gSetPointC - gHysteresisC))
         {
             gCurrentState = ThermostatState::IDLE;
-            break;
-        }
-
-        // SetPoint changed: re-evaluate whether cooling should continue
-        if (gSetPointChanged)
-        {
-            if (summerMode && (gSetPointC < gCurrentTempC))
-            {
-                gSetPointChanged = false;
-                break; // stay COOLING
-            }
-            else
-            {
-                gCurrentState = ThermostatState::IDLE;
-                gSetPointChanged = false;
-                break;
-            }
-        }
-
-        // User requests FAN_ONLY: ensure pump is turned off first via PRESTART
-        if (gFanOnlyRequested)
-        {
             gPumpDesired = false;
-            gCurrentState = ThermostatState::PRESTART;
-            gPrestartEnteredTime = millis();
-            gFanOnlyRequested = false;
             break;
         }
 
-        // Otherwise remain in COOLING
+        ThermostatState desired = desiredCoolingState();
+        if (desired == ThermostatState::IDLE)
+        {
+            gCurrentState = ThermostatState::IDLE;
+            gPumpDesired = false;
+        }
+        else
+        {
+            gCurrentState = desired;
+            gPumpDesired = true;
+        }
+        gSetPointChanged = false;
         break;
     }
 
     case ThermostatState::FAN_ONLY:
     {
-        // User requests FAN_ONLY again or setPoint changes: stay in FAN_ONLY
-        // FAN_ONLY doesn't respond to setPoint or mode changes directly,
-        // except those are already handled by global overrides above
-
+        gPumpDesired = false;
         if (gSetPointChanged)
-        {
-            gSetPointChanged = false; // Just consume it; stay in FAN_ONLY
-        }
-
+            gSetPointChanged = false;
         if (gFanOnlyRequested)
-        {
-            gFanOnlyRequested = false; // Consume; already in FAN_ONLY
-        }
-
-        // Otherwise stay in FAN_ONLY
+            gFanOnlyRequested = false;
         break;
     }
 
     case ThermostatState::OFF:
-    {
-        // OFF state does not transition out by itself
-        // Only exits via mode change or power restoration (handled at top of function)
-        break;
-    }
-
     default:
+        gPumpDesired = false;
         break;
     }
 
-    // Apply outputs based on the current (possibly updated) state
     outputsApplyState(gCurrentState);
+    logStateChangeIfNeeded();
 }

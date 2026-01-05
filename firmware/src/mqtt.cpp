@@ -144,10 +144,10 @@ namespace
             return "idle";
         case ThermostatState::PRESTART:
             return "prestart";
-        case ThermostatState::HEATING:
-            return "heating";
-        case ThermostatState::COOLING:
-            return "cooling";
+        case ThermostatState::COOLING_LOW:
+            return "cooling_low";
+        case ThermostatState::COOLING_HIGH:
+            return "cooling_high";
         case ThermostatState::FAN_ONLY:
             return "fan_only";
         case ThermostatState::OFF:
@@ -155,11 +155,6 @@ namespace
         default:
             return "unknown";
         }
-    }
-
-    const char *modeToString(ThermostatMode mode)
-    {
-        return (mode == ThermostatMode::SUMMER) ? "summer" : "winter";
     }
 
     void mqttPublish(const char *topic, const String &payload)
@@ -176,7 +171,6 @@ namespace
         mqttPublish((base + "/telemetry/temp_c").c_str(), String(gCurrentTempC, 2));
         mqttPublish((base + "/telemetry/humidity").c_str(), String(gCurrentHumidity, 2));
         mqttPublish((base + "/telemetry/state").c_str(), stateToString(gCurrentState));
-        mqttPublish((base + "/telemetry/mode").c_str(), modeToString(gCurrentMode));
         mqttPublish((base + "/telemetry/setpoint_c").c_str(), String(gSetPointC, 2));
         mqttPublish((base + "/telemetry/hysteresis_c").c_str(), String(gHysteresisC, 2));
         mqttPublish((base + "/telemetry/pump_desired").c_str(), gPumpDesired ? "1" : "0");
@@ -197,13 +191,6 @@ namespace
         else if (cmd == "hysteresis")
         {
             setHysteresis(payload.toFloat());
-        }
-        else if (cmd == "mode")
-        {
-            if (payload == "summer")
-                requestModeChange(ThermostatMode::SUMMER);
-            else if (payload == "winter")
-                requestModeChange(ThermostatMode::WINTER);
         }
         else if (cmd == "fan_only")
         {

@@ -1,263 +1,183 @@
 #include "touch.h"
 
-// Target display dimensions (landscape 320x240)
-#define TFT_WIDTH 320
-#define TFT_HEIGHT 240
-
-// Include SPI for underlying platform APIs
-#include <SPI.h>
 #include <Preferences.h>
 
-// Use wrapper that includes real drivers when available or provides shims
-#include "touch_drivers.h"
+#include "ui.h"
 
-// Pins from rules: T_CS -> GPIO5, T_IRQ -> GPIO33, SPI uses standard MOSI/MISO/SCK.
-// Default to polling to avoid missed IRQ issues; set TOUCH_USE_IRQ=1 to enable.
-#define T_CS_PIN 5
-#ifndef TOUCH_TFT_CS_PIN
-#define TOUCH_TFT_CS_PIN 15
-#endif
+// ---------------------------------------------------------------------------
+// Pin map (ILI9341 + XPT2046, shared SPI). Power pins (VCC/GND) are hardware.
+// These are informational; TFT_eSPI uses its own configuration for SPI pins.
+// ---------------------------------------------------------------------------
+static const uint16_t kTftWidth = 320;
+static const uint16_t kTftHeight = 240;
+static const uint8_t kTftRotation = 3;
+
+// Shared SPI bus pins.
+static const uint8_t SPI_SCK_PIN = 18;
+static const uint8_t SPI_MISO_PIN = 19;
+static const uint8_t SPI_MOSI_PIN = 23;
+
+// Display control pins.
+// Backlight LED is tied to 3.3V on your module (no GPIO control).
+static const uint8_t TFT_CS_PIN = 15;
+static const uint8_t TFT_DC_PIN = 2;
+static const uint8_t TFT_RST_PIN = 4;
+
+// Touch controller pins.
+static const uint8_t TOUCH_CS_PIN = 5;
+static const uint8_t TOUCH_IRQ_PIN = 33;
+
 #ifndef TOUCH_DEBUG
 #define TOUCH_DEBUG 0
 #endif
-#ifndef TOUCH_USE_IRQ
-#define TOUCH_USE_IRQ 0
-#endif
-#if TOUCH_USE_IRQ
-#define T_IRQ_PIN 33
-#else
-#define T_IRQ_PIN 255
-#endif
 
-static XPT2046_Touchscreen ts(T_CS_PIN, T_IRQ_PIN);
-
-// Internal state for last known touch coordinates
+// Last known touch state shared with LVGL.
 static volatile bool s_touched = false;
 static volatile uint16_t s_touchX = 0;
 static volatile uint16_t s_touchY = 0;
 
-// NVS storage for calibration values
+// NVS storage for calibration values.
 static Preferences s_prefs;
 
-// Calibration factors (raw -> pixel): x' = raw * s_cal_scale_x + s_cal_off_x
-static float s_cal_scale_x = 0.0f;
-static float s_cal_off_x = 0.0f;
-static float s_cal_scale_y = 0.0f;
-static float s_cal_off_y = 0.0f;
+static const char *kTouchPrefsNs = "touch";
+static const char *kTouchPrefsKeyHasCal = "has_cal";
+static const char *kTouchPrefsKeyCal = "cal";
 
-enum CalState
-{
-    CAL_IDLE = 0,
-    CAL_WAIT_TL_PRESS,
-    CAL_WAIT_TL_RELEASE,
-    CAL_WAIT_BR_PRESS,
-    CAL_WAIT_BR_RELEASE
-};
+static uint16_t s_touchCalData[5] = {0, 0, 0, 0, 0};
+static bool s_touchCalValid = false;
 
-static volatile CalState s_cal_state = CAL_IDLE;
-static TS_Point s_cal_p1;
-static TS_Point s_cal_p2;
-
+// Load previously stored calibration from NVS (if any).
 static void touchLoadCalibration()
 {
-    if (!s_prefs.begin("touch", true))
+    if (!s_prefs.begin(kTouchPrefsNs, true))
         return;
-    bool has_cal = s_prefs.getBool("has_cal", false);
+    bool has_cal = s_prefs.getBool(kTouchPrefsKeyHasCal, false);
     if (has_cal)
     {
-        s_cal_scale_x = s_prefs.getFloat("scale_x", 0.0f);
-        s_cal_off_x = s_prefs.getFloat("off_x", 0.0f);
-        s_cal_scale_y = s_prefs.getFloat("scale_y", 0.0f);
-        s_cal_off_y = s_prefs.getFloat("off_y", 0.0f);
+        size_t read = s_prefs.getBytes(kTouchPrefsKeyCal, s_touchCalData, sizeof(s_touchCalData));
+        s_touchCalValid = (read == sizeof(s_touchCalData));
     }
     s_prefs.end();
 }
 
 static void touchSaveCalibration()
 {
-    if (!s_prefs.begin("touch", false))
+    if (!s_prefs.begin(kTouchPrefsNs, false))
         return;
-    s_prefs.putBool("has_cal", true);
-    s_prefs.putFloat("scale_x", s_cal_scale_x);
-    s_prefs.putFloat("off_x", s_cal_off_x);
-    s_prefs.putFloat("scale_y", s_cal_scale_y);
-    s_prefs.putFloat("off_y", s_cal_off_y);
+    s_prefs.putBool(kTouchPrefsKeyHasCal, true);
+    s_prefs.putBytes(kTouchPrefsKeyCal, s_touchCalData, sizeof(s_touchCalData));
     s_prefs.end();
 }
 
 void touchInit()
 {
-    pinMode(T_CS_PIN, OUTPUT);
-    digitalWrite(T_CS_PIN, HIGH);
-    // Explicit VSPI pins to avoid ambiguity with other SPI users.
-    SPI.begin(18, 19, 23);
-    SPI.setFrequency(1000000);
-    pinMode(TOUCH_TFT_CS_PIN, OUTPUT);
-    digitalWrite(TOUCH_TFT_CS_PIN, HIGH);
-    ts.begin();
-    ts.setRotation(3);
+    // ۱. مدیریت پین‌های کنترلی برای جلوگیری از تداخل در زمان بوت
+    pinMode(TOUCH_CS_PIN, OUTPUT);
+    digitalWrite(TOUCH_CS_PIN, HIGH); // غیرفعال کردن اولیه چیپ لمسی
+
+    // ۲. بخش موقت برای عیب‌یابی: پاک کردن حافظه جهت اجبار به کالیبراسیون مجدد
+    // نکته: بعد از اینکه یک بار کالیبراسیون موفق داشتید، می‌توانید ۳ خط زیر را حذف کنید.
+    // s_prefs.begin(kTouchPrefsNs, false);
+    // s_prefs.clear();
+    // s_prefs.end();
+
+    // ۳. تلاش برای بارگذاری کالیبراسیون از حافظه
     touchLoadCalibration();
+
+    TFT_eSPI &tft = uiGetTft();
+    tft.setRotation(kTftRotation); // حتما چرخش نمایشگر قبل از کالیبره تنظیم شود
+
+    if (s_touchCalValid)
+    {
+        // اگر کالیبراسیون معتبر موجود باشد
+        tft.setTouch(s_touchCalData);
+        Serial.println("Touch: Calibration loaded from NVS.");
+    }
+    else
+    {
+        // اگر کالیبراسیون موجود نباشد (یا در مرحله ۲ پاک شده باشد)
+        Serial.println("Touch calibration needed (first boot or forced).");
+        Serial.println("Follow the on-screen prompts.");
+
+        // اجرای فرآیند کالیبراسیون روی نمایشگر
+        // در این مرحله باید ۴ نقطه در گوشه‌های صفحه را لمس کنید
+        tft.calibrateTouch(s_touchCalData, TFT_WHITE, TFT_BLACK, 15);
+
+        // ذخیره داده‌های جدید در NVS
+        touchSaveCalibration();
+        s_touchCalValid = true;
+        tft.setTouch(s_touchCalData);
+
+        Serial.println("Calibration complete and saved.");
+    }
+
 #if TOUCH_DEBUG
-    Serial.println("Touch init: XPT2046 polling mode");
+    Serial.println("Touch init: TFT_eSPI touch ready.");
 #endif
 }
 
-static void touchCalSetState(CalState next)
-{
-    s_cal_state = next;
-    if (next == CAL_WAIT_TL_PRESS)
-    {
-        Serial.println("Starting touch calibration.");
-        Serial.println("Tap and hold the top-left corner...");
-    }
-    else if (next == CAL_WAIT_BR_PRESS)
-    {
-        Serial.println("Tap and hold the bottom-right corner...");
-    }
-}
-
-static void touchCalibrationTick()
-{
-    bool touched = ts.touched();
-    switch (s_cal_state)
-    {
-    case CAL_WAIT_TL_PRESS:
-        if (touched)
-        {
-            s_cal_p1 = ts.getPoint();
-            s_cal_state = CAL_WAIT_TL_RELEASE;
-        }
-        break;
-    case CAL_WAIT_TL_RELEASE:
-        if (!touched)
-        {
-            Serial.print("Raw TL: ");
-            Serial.print(s_cal_p1.x);
-            Serial.print(",");
-            Serial.println(s_cal_p1.y);
-            touchCalSetState(CAL_WAIT_BR_PRESS);
-        }
-        break;
-    case CAL_WAIT_BR_PRESS:
-        if (touched)
-        {
-            s_cal_p2 = ts.getPoint();
-            s_cal_state = CAL_WAIT_BR_RELEASE;
-        }
-        break;
-    case CAL_WAIT_BR_RELEASE:
-        if (!touched)
-        {
-            Serial.print("Raw BR: ");
-            Serial.print(s_cal_p2.x);
-            Serial.print(",");
-            Serial.println(s_cal_p2.y);
-
-            float raw_dx = (float)(s_cal_p2.x - s_cal_p1.x);
-            float raw_dy = (float)(s_cal_p2.y - s_cal_p1.y);
-            if (raw_dx != 0.0f)
-            {
-                s_cal_scale_x = (float)(TFT_WIDTH - 1) / raw_dx;
-                s_cal_off_x = -s_cal_p1.x * s_cal_scale_x;
-            }
-            if (raw_dy != 0.0f)
-            {
-                s_cal_scale_y = (float)(TFT_HEIGHT - 1) / raw_dy;
-                s_cal_off_y = -s_cal_p1.y * s_cal_scale_y;
-            }
-
-            touchSaveCalibration();
-            Serial.println("Calibration complete.");
-            Serial.print("scale_x=");
-            Serial.println(s_cal_scale_x, 6);
-            Serial.print("off_x=");
-            Serial.println(s_cal_off_x, 2);
-            Serial.print("scale_y=");
-            Serial.println(s_cal_scale_y, 6);
-            Serial.print("off_y=");
-            Serial.println(s_cal_off_y, 2);
-
-            s_cal_state = CAL_IDLE;
-        }
-        break;
-    default:
-        break;
-    }
-}
+// void touchUpdate()
+// {
+//     // Poll and update cached coordinates; LVGL will call touchLvglRead to consume them.
+//     TFT_eSPI &tft = uiGetTft();
+//     uint16_t x = 0;
+//     uint16_t y = 0;
+//     bool touched = tft.getTouch(&x, &y);
+// #if TOUCH_DEBUG
+//     static uint32_t last_log_ms = 0;
+//     const uint32_t now = millis();
+//     if (now - last_log_ms >= 50)
+//     {
+//         Serial.print("touch xy ");
+//         Serial.print(x);
+//         Serial.print(",");
+//         Serial.print(y);
+//         Serial.print(" touched=");
+//         Serial.println(touched ? "1" : "0");
+//         last_log_ms = now;
+//     }
+// #endif
+//     if (touched)
+//     {
+//         s_touchX = x;
+//         s_touchY = y;
+//         s_touched = true;
+//     }
+//     else
+//     {
+//         s_touched = false;
+//     }
+// }
 
 void touchUpdate()
 {
-    // Poll and update cached coordinates; LVGL will call touchLvglRead to consume them
-    if (s_cal_state != CAL_IDLE)
-    {
-        touchCalibrationTick();
-        s_touched = false;
-        return;
-    }
-    // Ensure the display is deselected while reading touch to avoid bus contention.
-    digitalWrite(TOUCH_TFT_CS_PIN, HIGH);
-    bool touched = ts.touched();
-#if TOUCH_DEBUG
-    static uint32_t last_log_ms = 0;
-    const uint32_t now = millis();
-    if (now - last_log_ms >= 500)
-    {
-        TS_Point dbg = ts.getPoint();
-        Serial.print("touch raw ");
-        Serial.print(dbg.x);
-        Serial.print(",");
-        Serial.print(dbg.y);
-        Serial.print(" z=");
-        Serial.print(dbg.z);
-        Serial.print(" touched=");
-        Serial.println(touched ? "1" : "0");
-        last_log_ms = now;
-    }
-#endif
-    if (touched)
-    {
-        TS_Point p = ts.getPoint();
-        // Raw X/Y need mapping depending on wiring; try simple mapping and clip.
-        // XPT library returns values in display orientation; map to 0..TFT_WIDTH/HEIGHT
-        int rawx = p.x;
-        int rawy = p.y;
-        if (rawx < 0)
-            rawx = 0;
-        if (rawy < 0)
-            rawy = 0;
-        if (rawx > 4095)
-            rawx = 4095;
-        if (rawy > 4095)
-            rawy = 4095;
-        // If calibration is set, apply linear transform, otherwise use default map.
-        if (s_cal_scale_x != 0.0f)
-        {
-            int32_t xx = (int32_t)(rawx * s_cal_scale_x + s_cal_off_x + 0.5f);
-            if (xx < 0)
-                xx = 0;
-            if (xx >= TFT_WIDTH)
-                xx = TFT_WIDTH - 1;
-            s_touchX = (uint16_t)xx;
-        }
-        else
-        {
-            s_touchX = map(rawx, 0, 4095, 0, TFT_WIDTH - 1);
-        }
+    TFT_eSPI &tft = uiGetTft();
+    uint16_t x_raw = 0, y_raw = 0;
+    uint16_t tempX = 0, tempY = 0;
 
-        if (s_cal_scale_y != 0.0f)
+    // خواندن مقدار خام
+    if (tft.getTouchRaw(&x_raw, &y_raw))
+    {
+        // فیلتر کردن نویزهای شدید (4095 یا 0 معمولا خطا هستند)
+        if (x_raw > 0 && x_raw < 4090 && y_raw > 0 && y_raw < 4090)
         {
-            int32_t yy = (int32_t)(rawy * s_cal_scale_y + s_cal_off_y + 0.5f);
-            if (yy < 0)
-                yy = 0;
-            if (yy >= TFT_HEIGHT)
-                yy = TFT_HEIGHT - 1;
-            s_touchY = (uint16_t)yy;
+
+            // چاپ مقادیر برای کالیبره کردن دستی در صورت نیاز
+            Serial.printf("Valid Raw: X=%d, Y=%d | ", x_raw, y_raw);
+
+            if (tft.getTouch(&tempX, &tempY))
+            {
+                s_touchX = tempX;
+                s_touchY = tempY;
+                s_touched = true;
+                Serial.printf("Mapped to Screen: %d, %d\n", tempX, tempY);
+            }
+            else
+            {
+                Serial.println("Waiting for Calibration...");
+                s_touched = false;
+            }
         }
-        else
-        {
-            s_touchY = map(rawy, 0, 4095, 0, TFT_HEIGHT - 1);
-        }
-        s_touched = true;
     }
     else
     {
@@ -265,31 +185,37 @@ void touchUpdate()
     }
 }
 
-// Start non-blocking calibration. Calibration results are persisted to NVS.
+// Start calibration. Calibration results are persisted to NVS.
 void touchCalibrateStart()
 {
-    touchCalSetState(CAL_WAIT_TL_PRESS);
+    Serial.println("Calibration requested.");
+    Serial.println("Follow the on-screen prompts.");
+    TFT_eSPI &tft = uiGetTft();
+    tft.setRotation(kTftRotation);
+    tft.calibrateTouch(s_touchCalData, TFT_WHITE, TFT_BLACK, 15);
+    touchSaveCalibration();
+    s_touchCalValid = true;
+    tft.setTouch(s_touchCalData);
+    Serial.println("Calibration complete.");
 }
 
 bool touchCalibrationIsActive()
 {
-    return s_cal_state != CAL_IDLE;
+    return false;
 }
 
 // LVGL read callback
 void touchLvglRead(lv_indev_t *indev, lv_indev_data_t *data)
 {
-    // Update cached sample before reading
-    touchUpdate();
-
-    if (!s_touched)
+    if (s_touched)
     {
-        data->state = LV_INDEV_STATE_REL;
+        data->point.x = s_touchX;
+        data->point.y = s_touchY;
+        data->state = LV_INDEV_STATE_PR;
+        // Serial.println("LVGL is reading a TOUCH!"); // اگر این چاپ نشود، یعنی مرحله ۱ مشکل دارد
     }
     else
     {
-        data->state = LV_INDEV_STATE_PR;
-        data->point.x = s_touchX;
-        data->point.y = s_touchY;
+        data->state = LV_INDEV_STATE_REL;
     }
 }

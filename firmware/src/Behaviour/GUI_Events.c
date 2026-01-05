@@ -13,7 +13,7 @@ void GUI_event__Arc__screen__arc__Clicked (lv_event_t* event) {
 
 
 void GUI_event__Image__screen__moodImg__Clicked (lv_event_t* event) {
-    ui_on_mode_toggle_pressed(event);
+    (void)event;
 }
 
 
@@ -23,7 +23,7 @@ void GUI_event__Image__screen__fanImg__Clicked (lv_event_t* event) {
 
 
 void GUI_event__Image__screen__pumpImg__Clicked (lv_event_t* event) {
-    ui_on_calibrate_touch_pressed(event);
+    (void)event;
 }
 
 
@@ -32,6 +32,10 @@ void GUI_event__Image__screen__powerImg__Clicked (lv_event_t* event) {
 }
 
 void GUI_event__Image__screen__wifiImage__Clicked (lv_event_t* event) {
+    ui_on_wifi_icon_pressed(event);
+}
+
+void GUI_event__Image__screen__dashboardImg__Clicked (lv_event_t* event) {
     ui_on_wifi_icon_pressed(event);
 }
 

@@ -100,32 +100,12 @@ void ui_on_power_button_pressed(lv_event_t *e)
     requestPowerOff();
 }
 
-// Mode change requested. The UI should set the user_data of the event to a
-// pointer to ThermostatMode containing the desired mode.
-void ui_on_mode_change_requested(lv_event_t *e)
-{
-    void *ud = lv_event_get_user_data(e);
-    if (!ud)
-        return;
-    ThermostatMode mode = *(ThermostatMode *)ud;
-    requestModeChange(mode);
-}
-
 // Calibration button pressed in UI -> run touch calibration routine.
 void ui_on_calibrate_touch_pressed(lv_event_t *e)
 {
     (void)e;
     Serial.println("UI: calibration requested");
     touchCalibrateStart();
-}
-
-void ui_on_mode_toggle_pressed(lv_event_t *e)
-{
-    (void)e;
-    ThermostatMode next = (gCurrentMode == ThermostatMode::SUMMER)
-                              ? ThermostatMode::WINTER
-                              : ThermostatMode::SUMMER;
-    requestModeChange(next);
 }
 
 void ui_on_fan_toggle_pressed(lv_event_t *e)

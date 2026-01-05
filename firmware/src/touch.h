@@ -14,8 +14,7 @@
 void touchInit();
 void touchUpdate();
 void touchLvglRead(lv_indev_t *indev, lv_indev_data_t *data);
-// Start a non-blocking touch calibration (XPT2046 only). This collects two
-// corner samples and computes a linear scale/offset mapping used by touchUpdate().
-// Calibration results are stored in NVS.
+// Start touch calibration using the TFT_eSPI helper. This blocks until the
+// user completes the on-screen prompts. Calibration results are stored in NVS.
 void touchCalibrateStart();
 bool touchCalibrationIsActive();

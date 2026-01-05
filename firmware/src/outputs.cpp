@@ -7,19 +7,64 @@ namespace
     {
         digitalWrite(pin, on ? HIGH : LOW);
     }
+
+    const char *stateName(ThermostatState state)
+    {
+        switch (state)
+        {
+        case ThermostatState::IDLE:
+            return "IDLE";
+        case ThermostatState::PRESTART:
+            return "PRESTART";
+        case ThermostatState::COOLING_LOW:
+            return "COOLING_LOW";
+        case ThermostatState::COOLING_HIGH:
+            return "COOLING_HIGH";
+        case ThermostatState::FAN_ONLY:
+            return "FAN_ONLY";
+        case ThermostatState::OFF:
+            return "OFF";
+        default:
+            return "UNKNOWN";
+        }
+    }
+
+    void logOutputsIfChanged(ThermostatState state, bool fanHigh, bool fanLow, bool pump)
+    {
+        static bool lastFanHigh = false;
+        static bool lastFanLow = false;
+        static bool lastPump = false;
+        static ThermostatState lastState = ThermostatState::OFF;
+
+        if (fanHigh == lastFanHigh && fanLow == lastFanLow && pump == lastPump &&
+            state == lastState)
+            return;
+
+        Serial.print("Outputs (");
+        Serial.print(stateName(state));
+        Serial.print("): fan_high=");
+        Serial.print(fanHigh ? "ON" : "OFF");
+        Serial.print(" fan_low=");
+        Serial.print(fanLow ? "ON" : "OFF");
+        Serial.print(" pump=");
+        Serial.println(pump ? "ON" : "OFF");
+
+        lastFanHigh = fanHigh;
+        lastFanLow = fanLow;
+        lastPump = pump;
+        lastState = state;
+    }
 }
 
 void outputsInit()
 {
     // Ensure relays are driven LOW (OFF for active-HIGH relays) before switching pins to outputs
-    digitalWrite(HEATER_RELAY_PIN, LOW);
-    digitalWrite(COOLER_RELAY_PIN, LOW);
-    digitalWrite(FAN_RELAY_PIN, LOW);
+    digitalWrite(FAN_HIGH_RELAY_PIN, LOW);
+    digitalWrite(FAN_LOW_RELAY_PIN, LOW);
     digitalWrite(PUMP_RELAY_PIN, LOW);
 
-    pinMode(HEATER_RELAY_PIN, OUTPUT);
-    pinMode(COOLER_RELAY_PIN, OUTPUT);
-    pinMode(FAN_RELAY_PIN, OUTPUT);
+    pinMode(FAN_HIGH_RELAY_PIN, OUTPUT);
+    pinMode(FAN_LOW_RELAY_PIN, OUTPUT);
     pinMode(PUMP_RELAY_PIN, OUTPUT);
 
     outputsAllOff(); // enforce known safe state
@@ -27,26 +72,20 @@ void outputsInit()
 
 void outputsAllOff()
 {
-    setRelay(HEATER_RELAY_PIN, false);
-    setRelay(COOLER_RELAY_PIN, false);
-    setRelay(FAN_RELAY_PIN, false);
+    setRelay(FAN_HIGH_RELAY_PIN, false);
+    setRelay(FAN_LOW_RELAY_PIN, false);
     setRelay(PUMP_RELAY_PIN, false);
 }
 
 // Individual relay helpers (active-HIGH)
-void setHeaterRelay(bool on)
+void setFanHighRelay(bool on)
 {
-    setRelay(HEATER_RELAY_PIN, on);
+    setRelay(FAN_HIGH_RELAY_PIN, on);
 }
 
-void setCoolerRelay(bool on)
+void setFanLowRelay(bool on)
 {
-    setRelay(COOLER_RELAY_PIN, on);
-}
-
-void setFanRelay(bool on)
-{
-    setRelay(FAN_RELAY_PIN, on);
+    setRelay(FAN_LOW_RELAY_PIN, on);
 }
 
 void setPumpRelay(bool on)
@@ -56,44 +95,42 @@ void setPumpRelay(bool on)
 
 void outputsApplyState(ThermostatState state)
 {
+    bool fanHighOn = false;
+    bool fanLowOn = false;
+    bool pumpOn = false;
+
     switch (state)
     {
     case ThermostatState::PRESTART:
         // PRESTART: PRE-decide pump; only PRESTART controls pump.
-        setRelay(HEATER_RELAY_PIN, false);
-        setRelay(COOLER_RELAY_PIN, false);
-        setRelay(FAN_RELAY_PIN, false);
-        // Pump decision is mode-driven and set in state_machine (`gPumpDesired`).
-        if (gPumpDesired)
-            setRelay(PUMP_RELAY_PIN, true);
-        else
-            setRelay(PUMP_RELAY_PIN, false);
+        // Pump decision is cooling-driven and set in state_machine (`gPumpDesired`).
+        pumpOn = gPumpDesired;
         break;
 
-    case ThermostatState::HEATING:
-        // HEATING: Heater + Fan. Pump MUST be OFF before/when entering HEATING
-        setRelay(HEATER_RELAY_PIN, true);
-        setRelay(COOLER_RELAY_PIN, false);
-        setRelay(FAN_RELAY_PIN, true);
+    case ThermostatState::COOLING_LOW:
+        fanLowOn = true;
+        pumpOn = true;
         break;
 
-    case ThermostatState::COOLING:
-        // COOLING: Cooler + Fan, pump decision handled in PRESTART (do not toggle pump here)
-        setRelay(HEATER_RELAY_PIN, false);
-        setRelay(COOLER_RELAY_PIN, true);
-        setRelay(FAN_RELAY_PIN, true);
+    case ThermostatState::COOLING_HIGH:
+        fanHighOn = true;
+        pumpOn = true;
         break;
 
     case ThermostatState::FAN_ONLY:
-        setRelay(HEATER_RELAY_PIN, false);
-        setRelay(COOLER_RELAY_PIN, false);
-        setRelay(FAN_RELAY_PIN, true);
+        fanLowOn = true;
+        pumpOn = false;
         break;
 
     case ThermostatState::IDLE:
     case ThermostatState::OFF:
     default:
-        outputsAllOff();
+        pumpOn = false;
         break;
     }
+
+    setRelay(FAN_HIGH_RELAY_PIN, fanHighOn);
+    setRelay(FAN_LOW_RELAY_PIN, fanLowOn);
+    setRelay(PUMP_RELAY_PIN, pumpOn);
+    logOutputsIfChanged(state, fanHighOn, fanLowOn, pumpOn);
 }

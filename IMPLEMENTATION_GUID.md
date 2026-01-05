@@ -69,10 +69,9 @@ NO pseudo-code.
 | **D15**         | 15   | Boot sensitive   |
 
 --- RELAYS (SRD-05VDC-SL-C, Active HIGH) ---
-Heater Relay IN → GPIO 26 (D26)
-Cooler Relay IN → GPIO 27 (D27)
-Fan Relay IN → GPIO 14 (D14)
 Pump Relay IN → GPIO 25 (D25)
+Fan Low Relay IN → GPIO 14 (D14)
+Fan High Relay IN → GPIO 27 (D27)
 Relay board DC+ → 5V
 Relay board DC- → GND
 Load wiring: use COM + NO (normally open) for default-OFF behavior
@@ -80,8 +79,8 @@ Load wiring (AC mains): LIVE → COM, NO → load LIVE, load NEUTRAL → NEUTRAL
 Load wiring (DC): +V → COM, NO → load +, load - → GND/-
 
 Default boot state: ALL OFF
-Pump priming in PRESTART: run for 10s, then transition along the COOLING path.
-Pump must be OFF before entering FAN_ONLY or HEATING.
+Pump priming in PRESTART: run for 10s, then transition to COOLING_LOW/COOLING_HIGH.
+Pump must be OFF in FAN_ONLY.
 
 --- SHT3x SENSOR (I2C) ---
 VIN → 3.3V
@@ -94,24 +93,24 @@ I2C address: 0x44 (default with ADDR/AD tied low)
 Notes: keep I2C wires short; if unstable, add 4.7k pull-ups to 3.3V on SDA/SCL.
 
 --- TFT ILI9341 (SPI) ---
-SDI (MOSI) → GPIO 23 (D23)
 SDO (MISO) → GPIO 19 (D19)
+LED (backlight) → 3.3V (always on)
 SCK → GPIO 18 (D18)
-CS → GPIO 15 (D15)
+SDI (MOSI) → GPIO 23 (D23)
 D/C → GPIO 2 (D2)
 RESET → GPIO 4 (D4)
-LED (backlight) → 3.3V (always on) or GPIO 32 (D32, PWM capable)
-VCC → 3.3V
+CS → GPIO 15 (D15)
 GND → GND
+VCC → 3.3V
 Notes: if you use PWM on LED, drive it through a transistor/driver if it draws >10–15mA.
 
 --- TOUCH CONTROLLER (XPT2046, Resistive, SPI) ---
 
-T_CLK → GPIO 18 (D18, shared SPI SCK)
-T_DIN → GPIO 23 (D23, shared SPI MOSI)
-T_OUT/T_DO → GPIO 19 (D19, shared SPI MISO)
-T_CS → GPIO 5 (D5)
 T_IRQ → GPIO 33 (D33)
+T_OUT/T_DO → GPIO 19 (D19, shared SPI MISO)
+T_DIN → GPIO 23 (D23, shared SPI MOSI)
+T_CS → GPIO 5 (D5)
+T_CLK → GPIO 18 (D18, shared SPI SCK)
 Notes: if touch is unstable, add a small capacitor (100nF) near touch VCC/GND.
 
 ## PROJECT STRUCTURE
@@ -144,52 +143,31 @@ States:
 
 - IDLE
 - PRESTART
-- HEATING
-- COOLING
+- COOLING_LOW
+- COOLING_HIGH
 - FAN_ONLY
 - OFF
-
-Modes:
-
-- WINTER
-- SUMMER
 
 Rules:
 
 - GLOBAL: Power OFF overrides everything; from any state, OFF request → OFF
-- GLOBAL: Mode change always → PRESTART (then branches normally)
-- IDLE → PRESTART when setPoint changes
-- IDLE + FAN_ONLY user request → PRESTART → FAN_ONLY (2-step transition)
-- PRESTART (first enter or after mode change):
-  - If pumpDesired (typically SUMMER & currentTemp >= setPoint + hysteresis), run 10s pump priming; else skip priming
-  - After priming (or immediately if pumpDesired is false), check conditions:
+- IDLE → PRESTART when temp >= setPoint or setPoint changes
+- IDLE + FAN_ONLY user request → FAN_ONLY
+- PRESTART:
+  - Pump ON for 10s priming, then:
     - If temp invalid → OFF (safe state)
-    - WINTER & currentTemp <= setPoint - hysteresis → HEATING (pump OFF before entering)
-    - SUMMER & currentTemp >= setPoint + hysteresis → COOLING
-    - Otherwise (setPoint condition not met) → IDLE
-- HEATING:
-  - If temp invalid → OFF
-  - If currentTemp >= setPoint + hysteresis → IDLE
-  - setPoint changes: check current comparison
-    - If WINTER & setPoint > currentTemp: stay HEATING or keep checking
-    - If NOT (WINTER & setPoint > currentTemp): → IDLE
-  - User OFF request → OFF
-  - Mode change → PRESTART
-  - User FAN_ONLY request → FAN_ONLY (pump OFF first)
-- COOLING:
+    - If currentTemp >= setPoint + hysteresis → COOLING_HIGH
+    - Else if currentTemp >= setPoint → COOLING_LOW
+    - Otherwise → IDLE
+- COOLING_LOW / COOLING_HIGH:
   - If temp invalid → OFF
   - If currentTemp <= setPoint - hysteresis → IDLE
-  - setPoint changes: check current comparison
-    - If SUMMER & setPoint < currentTemp: stay COOLING or keep checking
-    - If NOT (SUMMER & setPoint < currentTemp): → IDLE
-  - User OFF request → OFF
-  - Mode change → PRESTART
-  - User FAN_ONLY request → FAN_ONLY (pump OFF first)
+  - If currentTemp >= setPoint + hysteresis → COOLING_HIGH
+  - If currentTemp between setPoint and setPoint + hysteresis → COOLING_LOW
+  - User FAN_ONLY request → FAN_ONLY (pump OFF)
 - FAN_ONLY:
-  - User OFF request → OFF
-  - Mode change → PRESTART
-  - setPoint change checked but FAN_ONLY doesn't respond to setPoint directly (remains FAN_ONLY)
-- OFF: stays OFF until mode change or power restored (if restart)
+  - Fan LOW only (pump OFF), ignores setPoint
+- OFF: stays OFF until power restored (if restart)
 
 NEVER compare floats using ==
 
@@ -197,15 +175,11 @@ NEVER compare floats using ==
 
 Configurable hysteresis (example: 0.5°C)
 
-WINTER:
+COOLING:
 
-- Heater ON when currentTemp <= setPoint - hysteresis
-- Heater OFF when currentTemp >= setPoint + hysteresis
-
-SUMMER:
-
-- Cooler ON when currentTemp >= setPoint + hysteresis
-- Cooler OFF when currentTemp <= setPoint - hysteresis
+- Cooling HIGH when currentTemp >= setPoint + hysteresis
+- Cooling LOW when currentTemp between setPoint and setPoint + hysteresis
+- Cooling OFF when currentTemp <= setPoint - hysteresis
 
 ## SENSOR REQUIREMENTS (SHT3x)
 
@@ -215,14 +189,14 @@ SUMMER:
 - Handle:
   - sensor not found
   - NaN readings
-- Limit read rate (≈1s)
+- Limit read rate (≈250ms)
 
 ## OUTPUT LOGIC
 
-- PRESTART → Pump ON for 10s only if pumpDesired is true; otherwise pump OFF
-- HEATING → Heater + Fan (Pump OFF before entering HEATING)
-- COOLING → Cooler + Fan (pump state decided in PRESTART; do not toggle here)
-- FAN_ONLY → Fan only (Pump OFF before entering)
+- PRESTART → Pump ON for 10s priming
+- COOLING_LOW → Pump ON + Fan LOW
+- COOLING_HIGH → Pump ON + Fan HIGH
+- FAN_ONLY → Fan LOW only (Pump OFF)
 - IDLE → all OFF
 - OFF → all OFF
 
@@ -317,13 +291,11 @@ STEP 11 (MQTT/DASHBOARD):
 ## PROJECT TODO LIST (BUGS / GAPS)
 
 - Fix LCD touch.
-- try the other LCD
-- Run touch calibration on first boot because of using XPT2046.
 
 - Connect to Wi-Fi and MQTT server on device.
 - Check web dashboard and device connectivity via MQTT to have integrated data.
 
-- Find Female DC Jack and get 5V adaptor for relays.
-- Check relays to work fine.
+- test relays.
 
-- fan speed?
+- Use three relays: one for pump, one for high speed, one for low speed (evaporative cooler design).(check it)
+- icons

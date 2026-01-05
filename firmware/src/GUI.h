@@ -125,6 +125,7 @@ void GUI_event__Image__screen__fanImg__Clicked (lv_event_t* event);
 void GUI_event__Image__screen__pumpImg__Clicked (lv_event_t* event);
 void GUI_event__Image__screen__powerImg__Clicked (lv_event_t* event);
 void GUI_event__Image__screen__wifiImage__Clicked (lv_event_t* event);
+void GUI_event__Image__screen__dashboardImg__Clicked (lv_event_t* event);
 void GUI_event__Button__wifi__backBtn__Clicked (lv_event_t* event);
 void GUI_event__Button__wifi__connectBtn__Clicked (lv_event_t* event);
 void GUI_event__Button__wifi__clearBtn__Clicked (lv_event_t* event);

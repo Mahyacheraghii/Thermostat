@@ -6,20 +6,13 @@ enum class ThermostatState : uint8_t
 {
     IDLE = 0,
     PRESTART,
-    HEATING,
-    COOLING,
+    COOLING_LOW,
+    COOLING_HIGH,
     FAN_ONLY,
     OFF
 };
 
-enum class ThermostatMode : uint8_t
-{
-    WINTER = 0,
-    SUMMER
-};
-
 extern ThermostatState gCurrentState;
-extern ThermostatMode gCurrentMode;
 extern float gSetPointC;
 extern float gCurrentTempC;
 extern float gCurrentHumidity;
@@ -27,7 +20,6 @@ extern float gHysteresisC;
 extern bool gSetPointChanged;
 extern bool gFanOnlyRequested;
 extern bool gPowerOffRequested;
-extern bool gModeChanged;
 extern bool gPumpDesired;
 
 void stateMachineInit();
@@ -37,4 +29,3 @@ void setSetPoint(float celsius);
 void setHysteresis(float celsius);
 void requestFanOnly();
 void requestPowerOff();
-void requestModeChange(ThermostatMode newMode);

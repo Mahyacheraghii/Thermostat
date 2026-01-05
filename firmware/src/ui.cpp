@@ -13,7 +13,7 @@ namespace
     static const uint16_t kMaxScreenHeight = 240;
     enum
     {
-        kScreenBufferPixels = kMaxScreenWidth * kMaxScreenHeight / 30
+        kScreenBufferPixels = kMaxScreenWidth * kMaxScreenHeight / 20
     };
     static lv_color_t s_buf[kScreenBufferPixels];
     static TFT_eSPI s_tft = TFT_eSPI();
@@ -85,20 +85,42 @@ static void uiUpdateLabels()
 
     if (GUI_Image__screen__fanImg)
     {
-        if (gFanSpeed != FanSpeed::OFF)
+        const bool fanActive =
+            (gCurrentState == ThermostatState::COOLING_LOW) ||
+            (gCurrentState == ThermostatState::COOLING_HIGH) ||
+            (gCurrentState == ThermostatState::FAN_ONLY);
+
+        if (fanActive)
             lv_obj_add_state(GUI_Image__screen__fanImg, LV_STATE_CHECKED);
         else
             lv_obj_clear_state(GUI_Image__screen__fanImg, LV_STATE_CHECKED);
+
+        lv_obj_set_style_img_recolor(GUI_Image__screen__fanImg,
+                                     fanActive ? lv_color_hex(0xFFFFFF) : lv_color_hex(0x9AA0A6),
+                                     LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_img_recolor_opa(GUI_Image__screen__fanImg,
+                                         LV_OPA_100,
+                                         LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 
-    if (GUI_Image__screen__fanImg)
+    if (GUI_Image__screen__pumpImg)
     {
-        if (gFanSpeed == FanSpeed::FAST)
-            lv_obj_set_style_opa(GUI_Image__screen__fanImg, LV_OPA_100, LV_PART_MAIN | LV_STATE_DEFAULT);
-        else if (gFanSpeed == FanSpeed::SLOW)
-            lv_obj_set_style_opa(GUI_Image__screen__fanImg, LV_OPA_70, LV_PART_MAIN | LV_STATE_DEFAULT);
-        else
-            lv_obj_set_style_opa(GUI_Image__screen__fanImg, LV_OPA_50, LV_PART_MAIN | LV_STATE_DEFAULT);
+        const bool pumpActive = gPumpDesired;
+        lv_obj_set_style_img_recolor(GUI_Image__screen__pumpImg, lv_color_hex(0x7EC8E3), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_img_recolor_opa(GUI_Image__screen__pumpImg,
+                                         pumpActive ? LV_OPA_100 : 0,
+                                         LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+
+    if (GUI_Image__screen__powerImg)
+    {
+        const bool powerOff = (gCurrentState == ThermostatState::OFF);
+        lv_obj_set_style_img_recolor(GUI_Image__screen__powerImg,
+                                     powerOff ? lv_color_hex(0xE53935) : lv_color_hex(0xFFFFFF),
+                                     LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_img_recolor_opa(GUI_Image__screen__powerImg,
+                                         LV_OPA_100,
+                                         LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 }
 
@@ -123,6 +145,14 @@ void uiInit()
     lv_indev_set_read_cb(indev, touchLvglRead);
 
     GUI_loadContent();
+
+    if (GUI_Image__screen__moodImg)
+        lv_obj_add_flag(GUI_Image__screen__moodImg, LV_OBJ_FLAG_HIDDEN);
+}
+
+TFT_eSPI &uiGetTft()
+{
+    return s_tft;
 }
 
 static void uiUpdateWifiIcon(wl_status_t status)
@@ -180,9 +210,17 @@ void uiUpdate()
         lastWifiCheckMs = now;
         wl_status_t status = WiFi.status();
         if (GUI_Image__screen__wifiImage)
-            lv_obj_clear_flag(GUI_Image__screen__wifiImage, LV_OBJ_FLAG_HIDDEN);
-
-        uiUpdateWifiIcon(status);
+        {
+            if (status == WL_CONNECTED)
+            {
+                lv_obj_clear_flag(GUI_Image__screen__wifiImage, LV_OBJ_FLAG_HIDDEN);
+                uiUpdateWifiIcon(status);
+            }
+            else
+            {
+                lv_obj_add_flag(GUI_Image__screen__wifiImage, LV_OBJ_FLAG_HIDDEN);
+            }
+        }
 
         if (GUI_Screen__wifi && lv_scr_act() == GUI_Screen__wifi && GUI_Label__wifi__status)
         {

@@ -12,6 +12,7 @@ void GUI_initScreen__screen () {
      lv_obj_set_pos( GUI_Image__screen__dashboardImg, 141, -100 );
      lv_obj_set_size( GUI_Image__screen__dashboardImg, 24, 24 );
      lv_img_set_zoom( GUI_Image__screen__dashboardImg, 204 );
+     lv_obj_add_event_cb( GUI_Image__screen__dashboardImg, GUI_event__Image__screen__dashboardImg__Clicked, LV_EVENT_CLICKED, NULL );
 
     GUI_Image__screen__wifiImage = lv_image_create( GUI_Screen__screen );
     lv_obj_add_flag( GUI_Image__screen__wifiImage, LV_OBJ_FLAG_ADV_HITTEST );
