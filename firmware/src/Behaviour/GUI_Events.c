@@ -16,17 +16,6 @@ void GUI_event__Image__screen__moodImg__Clicked (lv_event_t* event) {
     (void)event;
 }
 
-
-void GUI_event__Image__screen__fanImg__Clicked (lv_event_t* event) {
-    ui_on_fan_toggle_pressed(event);
-}
-
-
-void GUI_event__Image__screen__pumpImg__Clicked (lv_event_t* event) {
-    (void)event;
-}
-
-
 void GUI_event__Image__screen__powerImg__Clicked (lv_event_t* event) {
     ui_on_power_button_pressed(event);
 }
@@ -57,4 +46,16 @@ void GUI_event__TextArea__wifi__ssid__Focused (lv_event_t* event) {
 
 void GUI_event__TextArea__wifi__pass__Focused (lv_event_t* event) {
     ui_on_wifi_pass_focused(event);
+}
+
+void GUI_event__TextArea__wifi__ssid__Defocused (lv_event_t* event) {
+    ui_on_wifi_textarea_defocused(event);
+}
+
+void GUI_event__TextArea__wifi__pass__Defocused (lv_event_t* event) {
+    ui_on_wifi_textarea_defocused(event);
+}
+
+void GUI_event__Keyboard__wifi__keyboard__Action (lv_event_t* event) {
+    ui_on_wifi_keyboard_event(event);
 }

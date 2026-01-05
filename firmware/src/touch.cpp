@@ -16,7 +16,7 @@ static const uint8_t TOUCH_CS_PIN = 5;
 static const uint8_t TOUCH_IRQ_PIN = 33;
 
 #ifndef TOUCH_DEBUG
-#define TOUCH_DEBUG 1 // Enable debug output to diagnose issues
+#define TOUCH_DEBUG 0 // Enable debug output to diagnose issues
 #endif
 
 // Last known touch state shared with LVGL

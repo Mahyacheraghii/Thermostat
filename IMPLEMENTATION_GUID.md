@@ -79,7 +79,7 @@ Load wiring (AC mains): LIVE → COM, NO → load LIVE, load NEUTRAL → NEUTRAL
 Load wiring (DC): +V → COM, NO → load +, load - → GND/-
 
 Default boot state: ALL OFF
-Pump priming in PRESTART: run for 10s, then transition to COOLING_LOW/COOLING_HIGH.
+Pump priming in PRESTART: run for 3s, then transition to COOLING_LOW/COOLING_HIGH.
 Pump must be OFF in FAN_ONLY.
 
 --- SHT3x SENSOR (I2C) ---
@@ -290,12 +290,8 @@ STEP 11 (MQTT/DASHBOARD):
 
 ## PROJECT TODO LIST (BUGS / GAPS)
 
-- Fix LCD touch.
+- Fix LCD touch frequency.
 
 - Connect to Wi-Fi and MQTT server on device.
+
 - Check web dashboard and device connectivity via MQTT to have integrated data.
-
-- test relays.
-
-- Use three relays: one for pump, one for high speed, one for low speed (evaporative cooler design).(check it)
-- icons

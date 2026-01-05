@@ -121,8 +121,6 @@ void GUI_initAnimations ();
 
 void GUI_event__Arc__screen__arc__Clicked (lv_event_t* event);
 void GUI_event__Image__screen__moodImg__Clicked (lv_event_t* event);
-void GUI_event__Image__screen__fanImg__Clicked (lv_event_t* event);
-void GUI_event__Image__screen__pumpImg__Clicked (lv_event_t* event);
 void GUI_event__Image__screen__powerImg__Clicked (lv_event_t* event);
 void GUI_event__Image__screen__wifiImage__Clicked (lv_event_t* event);
 void GUI_event__Image__screen__dashboardImg__Clicked (lv_event_t* event);
@@ -131,6 +129,9 @@ void GUI_event__Button__wifi__connectBtn__Clicked (lv_event_t* event);
 void GUI_event__Button__wifi__clearBtn__Clicked (lv_event_t* event);
 void GUI_event__TextArea__wifi__ssid__Focused (lv_event_t* event);
 void GUI_event__TextArea__wifi__pass__Focused (lv_event_t* event);
+void GUI_event__TextArea__wifi__ssid__Defocused (lv_event_t* event);
+void GUI_event__TextArea__wifi__pass__Defocused (lv_event_t* event);
+void GUI_event__Keyboard__wifi__keyboard__Action (lv_event_t* event);
  void PowerToggle (lv_event_t* event);
 
 
@@ -148,3 +149,13 @@ LV_IMG_DECLARE( pump );
 LV_IMG_DECLARE( power );
 LV_IMG_DECLARE( sun );
 LV_IMG_DECLARE( winter );
+LV_IMG_DECLARE( fan_fast );
+LV_IMG_DECLARE( fan_slow );
+LV_IMG_DECLARE( fan_off );
+LV_IMG_DECLARE( pump_on );
+LV_IMG_DECLARE( pump_off );
+LV_IMG_DECLARE( power_on );
+LV_IMG_DECLARE( power_off );
+LV_IMG_DECLARE( wifi_full );
+LV_IMG_DECLARE( wifi_midum );
+LV_IMG_DECLARE( wifi_low );

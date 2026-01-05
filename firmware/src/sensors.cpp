@@ -9,7 +9,7 @@ namespace
     bool sensorHealthy = false;
     Adafruit_SHT31 sht31;
     static const uint8_t SHT3X_I2C_ADDR = 0x44; // ADDR/AD tied low; use 0x45 if tied high.
-    static const unsigned long SHT3X_UPDATE_INTERVAL_MS = 250;
+    static const unsigned long SHT3X_UPDATE_INTERVAL_MS = 50;
 }
 
 bool sensorsInit()

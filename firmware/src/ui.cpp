@@ -85,42 +85,23 @@ static void uiUpdateLabels()
 
     if (GUI_Image__screen__fanImg)
     {
-        const bool fanActive =
-            (gCurrentState == ThermostatState::COOLING_LOW) ||
-            (gCurrentState == ThermostatState::COOLING_HIGH) ||
-            (gCurrentState == ThermostatState::FAN_ONLY);
-
-        if (fanActive)
-            lv_obj_add_state(GUI_Image__screen__fanImg, LV_STATE_CHECKED);
-        else
-            lv_obj_clear_state(GUI_Image__screen__fanImg, LV_STATE_CHECKED);
-
-        lv_obj_set_style_img_recolor(GUI_Image__screen__fanImg,
-                                     fanActive ? lv_color_hex(0xFFFFFF) : lv_color_hex(0x9AA0A6),
-                                     LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_img_recolor_opa(GUI_Image__screen__fanImg,
-                                         LV_OPA_100,
-                                         LV_PART_MAIN | LV_STATE_DEFAULT);
+        const lv_image_dsc_t *fanIcon = &fan_off;
+        if (gCurrentState == ThermostatState::COOLING_HIGH)
+            fanIcon = &fan_fast;
+        else if (gCurrentState == ThermostatState::COOLING_LOW || gCurrentState == ThermostatState::FAN_ONLY)
+            fanIcon = &fan_slow;
+        lv_image_set_src(GUI_Image__screen__fanImg, fanIcon);
     }
 
     if (GUI_Image__screen__pumpImg)
     {
-        const bool pumpActive = gPumpDesired;
-        lv_obj_set_style_img_recolor(GUI_Image__screen__pumpImg, lv_color_hex(0x7EC8E3), LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_img_recolor_opa(GUI_Image__screen__pumpImg,
-                                         pumpActive ? LV_OPA_100 : 0,
-                                         LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_image_set_src(GUI_Image__screen__pumpImg, gPumpDesired ? &pump_on : &pump_off);
     }
 
     if (GUI_Image__screen__powerImg)
     {
         const bool powerOff = (gCurrentState == ThermostatState::OFF);
-        lv_obj_set_style_img_recolor(GUI_Image__screen__powerImg,
-                                     powerOff ? lv_color_hex(0xE53935) : lv_color_hex(0xFFFFFF),
-                                     LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_img_recolor_opa(GUI_Image__screen__powerImg,
-                                         LV_OPA_100,
-                                         LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_image_set_src(GUI_Image__screen__powerImg, powerOff ? &power_off : &power_on);
     }
 }
 
@@ -160,31 +141,18 @@ static void uiUpdateWifiIcon(wl_status_t status)
     if (!GUI_Image__screen__wifiImage)
         return;
 
-    uint8_t icon_opa = 140;
-
+    const lv_image_dsc_t *wifiIcon = &wifi_low;
     if (status == WL_CONNECTED)
     {
         int rssi = WiFi.RSSI();
         if (rssi > -60)
-            icon_opa = 255; // full
+            wifiIcon = &wifi_full;
         else if (rssi > -70)
-            icon_opa = 200; // medium
-        else if (rssi > -80)
-            icon_opa = 160; // low
+            wifiIcon = &wifi_midum;
         else
-            icon_opa = 120; // weak
+            wifiIcon = &wifi_low;
     }
-    else if (status == WL_IDLE_STATUS)
-    {
-        icon_opa = 180; // connecting
-    }
-    else if (status == WL_CONNECT_FAILED || status == WL_NO_SSID_AVAIL)
-    {
-        icon_opa = 120; // error
-    }
-
-    lv_obj_set_style_img_recolor_opa(GUI_Image__screen__wifiImage, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_img_opa(GUI_Image__screen__wifiImage, icon_opa, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_image_set_src(GUI_Image__screen__wifiImage, wifiIcon);
 }
 
 void uiUpdate()
@@ -199,7 +167,7 @@ void uiUpdate()
     static uint32_t lastWifiCheckMs = 0;
     const uint32_t now = millis();
 
-    if (now - lastUiUpdateMs >= 500)
+    if (now - lastUiUpdateMs >= 100)
     {
         lastUiUpdateMs = now;
         uiUpdateLabels();

@@ -49,7 +49,7 @@ static void logStateChangeIfNeeded()
 
 // PRESTART state management
 static uint32_t gPrestartEnteredTime = 0;
-static const uint32_t PUMP_PRIMING_DURATION_MS = 10000; // 10 seconds
+static const uint32_t PUMP_PRIMING_DURATION_MS = 3000; // 3 seconds
 static const uint32_t SENSOR_TIMEOUT_MS = 3000; // fail-safe if no fresh data
 
 void stateMachineInit()
@@ -84,13 +84,9 @@ void setSetPoint(float celsius)
 
 void setHysteresis(float celsius)
 {
-    // Allow updating hysteresis at runtime via UI or config tools.
-    // Validate value: must be finite and non-negative. Typical hysteresis
-    // values are small (e.g., 0.5°C). Ignore invalid inputs.
-    if (!isnan(celsius) && isfinite(celsius) && celsius >= 0.0f)
-    {
-        gHysteresisC = celsius;
-    }
+    // Hysteresis is fixed at 1.0°C for this project.
+    (void)celsius;
+    gHysteresisC = DEFAULT_HYSTERESIS_C;
 }
 
 void requestFanOnly()
@@ -156,12 +152,18 @@ void stateMachineUpdate()
         return !isnan(gCurrentTempC) && !isnan(gSetPointC);
     };
 
-    auto desiredCoolingState = []() -> ThermostatState {
-        if (gCurrentTempC >= (gSetPointC + gHysteresisC))
-            return ThermostatState::COOLING_HIGH;
-        if (gCurrentTempC >= gSetPointC)
-            return ThermostatState::COOLING_LOW;
-        return ThermostatState::IDLE;
+    auto coolingShouldStart = []() {
+        return gCurrentTempC >= (gSetPointC + gHysteresisC);
+    };
+
+    auto coolingShouldStop = []() {
+        return gCurrentTempC <= (gSetPointC - gHysteresisC);
+    };
+
+    auto coolingSpeedState = []() -> ThermostatState {
+        return (gCurrentTempC - gSetPointC) >= 8.0f
+            ? ThermostatState::COOLING_HIGH
+            : ThermostatState::COOLING_LOW;
     };
 
     switch (gCurrentState)
@@ -178,7 +180,7 @@ void stateMachineUpdate()
 
         if (gSetPointChanged && tempValid())
         {
-            if (desiredCoolingState() != ThermostatState::IDLE)
+            if (coolingShouldStart())
             {
                 gCurrentState = ThermostatState::PRESTART;
                 gPrestartEnteredTime = millis();
@@ -188,7 +190,7 @@ void stateMachineUpdate()
             break;
         }
 
-        if (tempValid() && desiredCoolingState() != ThermostatState::IDLE)
+        if (tempValid() && coolingShouldStart())
         {
             gCurrentState = ThermostatState::PRESTART;
             gPrestartEnteredTime = millis();
@@ -220,15 +222,14 @@ void stateMachineUpdate()
             break;
         }
 
-        ThermostatState desired = desiredCoolingState();
-        if (desired == ThermostatState::IDLE)
+        if (coolingShouldStop())
         {
             gCurrentState = ThermostatState::IDLE;
             gPumpDesired = false;
         }
         else
         {
-            gCurrentState = desired;
+            gCurrentState = coolingSpeedState();
             gPumpDesired = true;
         }
         gSetPointChanged = false;
@@ -253,24 +254,15 @@ void stateMachineUpdate()
             break;
         }
 
-        if (gCurrentTempC <= (gSetPointC - gHysteresisC))
+        if (coolingShouldStop())
         {
             gCurrentState = ThermostatState::IDLE;
             gPumpDesired = false;
             break;
         }
 
-        ThermostatState desired = desiredCoolingState();
-        if (desired == ThermostatState::IDLE)
-        {
-            gCurrentState = ThermostatState::IDLE;
-            gPumpDesired = false;
-        }
-        else
-        {
-            gCurrentState = desired;
-            gPumpDesired = true;
-        }
+        gCurrentState = coolingSpeedState();
+        gPumpDesired = true;
         gSetPointChanged = false;
         break;
     }

@@ -62,6 +62,12 @@ void ui_on_setpoint_changed(lv_event_t *e)
     {
         int val = lv_arc_get_value(GUI_Arc__screen__arc);
         setSetPoint((float)val);
+        if (GUI_Label__screen__setTemperature)
+        {
+            char buf[8];
+            snprintf(buf, sizeof(buf), "%d", val);
+            lv_label_set_text(GUI_Label__screen__setTemperature, buf);
+        }
         return;
     }
 
@@ -86,13 +92,6 @@ void ui_on_setpoint_changed(lv_event_t *e)
     }
 }
 
-// Fan-only request button
-void ui_on_fan_button_pressed(lv_event_t *e)
-{
-    (void)e;
-    requestFanOnly();
-}
-
 // Power-off request button
 void ui_on_power_button_pressed(lv_event_t *e)
 {
@@ -109,19 +108,6 @@ void ui_on_calibrate_touch_pressed(lv_event_t *e)
     (void)e;
     Serial.println("UI: calibration requested");
     touchCalibrateStart();
-}
-
-void ui_on_fan_toggle_pressed(lv_event_t *e)
-{
-    (void)e;
-    if (gCurrentState == ThermostatState::FAN_ONLY)
-    {
-        requestPowerOff();
-    }
-    else
-    {
-        requestFanOnly();
-    }
 }
 
 void ui_on_mqtt_save_pressed(lv_event_t *e)
@@ -206,4 +192,21 @@ void ui_on_wifi_pass_focused(lv_event_t *e)
         return;
     lv_keyboard_set_textarea(GUI_Keyboard__wifi__keyboard, GUI_TextArea__wifi__pass);
     lv_obj_clear_flag(GUI_Keyboard__wifi__keyboard, LV_OBJ_FLAG_HIDDEN);
+}
+
+void ui_on_wifi_textarea_defocused(lv_event_t *e)
+{
+    (void)e;
+    if (!GUI_Keyboard__wifi__keyboard)
+        return;
+    lv_keyboard_set_textarea(GUI_Keyboard__wifi__keyboard, NULL);
+    lv_obj_add_flag(GUI_Keyboard__wifi__keyboard, LV_OBJ_FLAG_HIDDEN);
+}
+
+void ui_on_wifi_keyboard_event(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code != LV_EVENT_READY && code != LV_EVENT_CANCEL)
+        return;
+    ui_on_wifi_textarea_defocused(e);
 }
