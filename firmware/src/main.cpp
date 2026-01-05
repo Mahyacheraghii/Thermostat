@@ -7,37 +7,38 @@
 #include "touch.h"
 #include "mqtt.h"
 #include "wifi_config.h"
+#include <nvs_flash.h>
 
 void setup()
 {
     Serial.begin(115200);
-    delay(1000); // زمان برای بالا آمدن سریال مانیتور
-    Serial.println("System Initializing...");
+    delay(500);
+    Serial.println("\n--- System Starting ---");
 
-    // --- حل مشکل NVS ---
+    // ۱. ابتدا و قبل از هر چیزی NVS را بیدار کن
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
-        Serial.println("NVS: Erasing and re-init...");
+        Serial.println("NVS: Partition problem found. Erasing...");
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-    // ------------------
+    Serial.println("NVS: Initialized successfully.");
 
+    // ۲. حالا که NVS بیدار شده، Preferences می‌توانند فضای خود را بسازند
+    // اگر این توابع را قبل از nvs_flash_init صدا بزنی، آن خطای قرمز را می‌دهند
     outputsInit();
-
-    // حالا Preferences به درستی کار خواهد کرد
     wifiConfigEnsureStored();
     sensorsInit();
 
+    // ۳. راه‌اندازی بخش‌های گرافیکی و شبکه
     uiInit();
     touchInit();
-
     mqttInit();
     stateMachineInit();
 
-    Serial.println("System Ready.");
+    Serial.println("System Ready and Stable.");
 }
 
 void loop()
