@@ -107,7 +107,7 @@ void GUI_initScreen__screen () {
       lv_obj_clear_flag( GUI_Image__screen__pumpImg, LV_OBJ_FLAG_CLICKABLE );
 
       GUI_Image__screen__powerImg = lv_image_create( GUI_Container__screen__controlleersContainer );
-      lv_obj_add_flag( GUI_Image__screen__powerImg, LV_OBJ_FLAG_ADV_HITTEST );
+      lv_obj_add_flag( GUI_Image__screen__powerImg, LV_OBJ_FLAG_CLICKABLE );
       lv_obj_remove_flag( GUI_Image__screen__powerImg, LV_OBJ_FLAG_SCROLLABLE );
       lv_obj_set_align( GUI_Image__screen__powerImg, LV_ALIGN_CENTER );
       lv_obj_set_size( GUI_Image__screen__powerImg, 24, 24 );
@@ -244,4 +244,98 @@ void GUI_initScreenTexts__wifi () {
 }
 
 void GUI_initScreenStyles__wifi () {
+    lv_obj_set_style_bg_color(GUI_Screen__wifi, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(GUI_Screen__wifi, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_set_style_text_color(GUI_Label__wifi__title, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(GUI_Label__wifi__status, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_set_style_bg_color(GUI_Button__wifi__backBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__backBtn, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(GUI_Button__wifi__backBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(GUI_Button__wifi__backBtn, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(GUI_Label__wifi__backLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__backBtn, 255, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(GUI_Button__wifi__backBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_border_color(GUI_Button__wifi__backBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_text_color(GUI_Label__wifi__backLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__backBtn, 255, LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_color(GUI_Button__wifi__backBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_border_color(GUI_Button__wifi__backBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_text_color(GUI_Label__wifi__backLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__backBtn, 255, LV_PART_MAIN | LV_STATE_FOCUS_KEY);
+    lv_obj_set_style_bg_color(GUI_Button__wifi__backBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_FOCUS_KEY);
+    lv_obj_set_style_border_color(GUI_Button__wifi__backBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_FOCUS_KEY);
+    lv_obj_set_style_text_color(GUI_Label__wifi__backLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_FOCUS_KEY);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__backBtn, 255, LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(GUI_Button__wifi__backBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_border_color(GUI_Button__wifi__backBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_text_color(GUI_Label__wifi__backLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_CHECKED);
+
+    lv_obj_set_style_bg_color(GUI_TextArea__wifi__ssid, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(GUI_TextArea__wifi__ssid, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(GUI_TextArea__wifi__ssid, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(GUI_TextArea__wifi__ssid, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(GUI_TextArea__wifi__ssid, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_set_style_bg_color(GUI_TextArea__wifi__pass, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(GUI_TextArea__wifi__pass, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(GUI_TextArea__wifi__pass, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(GUI_TextArea__wifi__pass, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(GUI_TextArea__wifi__pass, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_set_style_bg_color(GUI_Button__wifi__connectBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__connectBtn, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(GUI_Button__wifi__connectBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(GUI_Button__wifi__connectBtn, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(GUI_Label__wifi__connectLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__connectBtn, 255, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(GUI_Button__wifi__connectBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_border_color(GUI_Button__wifi__connectBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_text_color(GUI_Label__wifi__connectLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__connectBtn, 255, LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_color(GUI_Button__wifi__connectBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_border_color(GUI_Button__wifi__connectBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_text_color(GUI_Label__wifi__connectLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__connectBtn, 255, LV_PART_MAIN | LV_STATE_FOCUS_KEY);
+    lv_obj_set_style_bg_color(GUI_Button__wifi__connectBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_FOCUS_KEY);
+    lv_obj_set_style_border_color(GUI_Button__wifi__connectBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_FOCUS_KEY);
+    lv_obj_set_style_text_color(GUI_Label__wifi__connectLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_FOCUS_KEY);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__connectBtn, 255, LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(GUI_Button__wifi__connectBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_border_color(GUI_Button__wifi__connectBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_text_color(GUI_Label__wifi__connectLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_CHECKED);
+
+    lv_obj_set_style_bg_color(GUI_Button__wifi__clearBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__clearBtn, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(GUI_Button__wifi__clearBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(GUI_Button__wifi__clearBtn, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(GUI_Label__wifi__clearLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__clearBtn, 255, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(GUI_Button__wifi__clearBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_border_color(GUI_Button__wifi__clearBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_text_color(GUI_Label__wifi__clearLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__clearBtn, 255, LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_color(GUI_Button__wifi__clearBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_border_color(GUI_Button__wifi__clearBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_text_color(GUI_Label__wifi__clearLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__clearBtn, 255, LV_PART_MAIN | LV_STATE_FOCUS_KEY);
+    lv_obj_set_style_bg_color(GUI_Button__wifi__clearBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_FOCUS_KEY);
+    lv_obj_set_style_border_color(GUI_Button__wifi__clearBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_FOCUS_KEY);
+    lv_obj_set_style_text_color(GUI_Label__wifi__clearLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_FOCUS_KEY);
+    lv_obj_set_style_bg_opa(GUI_Button__wifi__clearBtn, 255, LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(GUI_Button__wifi__clearBtn, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_border_color(GUI_Button__wifi__clearBtn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_text_color(GUI_Label__wifi__clearLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_CHECKED);
+
+    lv_obj_set_style_bg_color(GUI_Keyboard__wifi__keyboard, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(GUI_Keyboard__wifi__keyboard, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(GUI_Keyboard__wifi__keyboard, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(GUI_Keyboard__wifi__keyboard, lv_color_hex(0xFFFFFF), LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(GUI_Keyboard__wifi__keyboard, lv_color_hex(0x000000), LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(GUI_Keyboard__wifi__keyboard, lv_color_hex(0x000000), LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(GUI_Keyboard__wifi__keyboard, 1, LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(GUI_Keyboard__wifi__keyboard, lv_color_hex(0xFFFFFF), LV_PART_ITEMS | LV_STATE_PRESSED);
+    lv_obj_set_style_text_color(GUI_Keyboard__wifi__keyboard, lv_color_hex(0x000000), LV_PART_ITEMS | LV_STATE_PRESSED);
+    lv_obj_set_style_border_color(GUI_Keyboard__wifi__keyboard, lv_color_hex(0x000000), LV_PART_ITEMS | LV_STATE_PRESSED);
 }

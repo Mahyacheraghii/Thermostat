@@ -11,15 +11,26 @@
 void setup()
 {
     Serial.begin(115200);
+    delay(1000); // زمان برای بالا آمدن سریال مانیتور
     Serial.println("System Initializing...");
 
-    // ابتدا خروجی‌ها را برای امنیت در حالت OFF ست می‌کنیم
+    // --- حل مشکل NVS ---
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
+        Serial.println("NVS: Erasing and re-init...");
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+    // ------------------
+
     outputsInit();
 
+    // حالا Preferences به درستی کار خواهد کرد
     wifiConfigEnsureStored();
     sensorsInit();
 
-    // ترتیب مهم است: ابتدا UI (که LVGL را اینیت می‌کند) و سپس Touch
     uiInit();
     touchInit();
 
@@ -28,31 +39,6 @@ void setup()
 
     Serial.println("System Ready.");
 }
-
-// void loop()
-// {
-//     // ۱. خواندن داده‌های سنسور
-//     sensorsUpdate();
-
-//     // ۲. خواندن مختصات لمسی از سخت‌افزار
-//     touchUpdate();
-
-//     // ۳. پردازش منطق سیستم (State Machine)
-//     stateMachineUpdate();
-
-//     // ۴. مدیریت ارتباطات
-//     mqttUpdate();
-
-//     // ۵. آپدیت لایه گرافیکی (اگر تابعی برای آپدیت متغیرهای نمایشی دارید)
-//     uiUpdate();
-
-//     // ۶. حیاتی‌ترین بخش برای LVGL: پردازش رویدادها و کلیک‌ها
-//     // این تابع باعث می‌شود دکمه‌ها واکنش نشان دهند
-//     lv_timer_handler();
-
-//     // ۷. تاخیر کوتاه برای جلوگیری از اشغال کامل CPU و پایداری Wi-Fi
-//     delay(1);
-// }
 
 void loop()
 {

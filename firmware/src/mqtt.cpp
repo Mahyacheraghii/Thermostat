@@ -7,6 +7,7 @@
 
 #include "state_machine.h"
 #include "sensors.h"
+#include <nvs_flash.h>
 
 #ifndef WIFI_SSID
 #define WIFI_SSID "Meow Meow 5"
@@ -115,25 +116,66 @@ namespace
                                     (String(MQTT_BASE_TOPIC) + "/telemetry/status").c_str(), 1, true, "offline");
     }
 
+// در ابتدای فایل این را اضافه کنید
+#include <nvs_flash.h>
+
+    // داخل namespace در بخش wifiEnsureConnected:
     bool wifiEnsureConnected()
     {
-        if (WiFi.status() == WL_CONNECTED)
-            return true;
+        wl_status_t status = WiFi.status();
 
-        String ssid;
-        String pass;
+        if (status == WL_CONNECTED)
+        {
+            static bool ipPrinted = false;
+            if (!ipPrinted)
+            {
+                Serial.print("WiFi: Connected! IP address: ");
+                Serial.println(WiFi.localIP());
+                ipPrinted = true;
+            }
+            return true;
+        }
+
+        static unsigned long lastAttemptTime = 0;
+        static bool isConnecting = false;
+
+        if (isConnecting)
+        {
+            if (status == WL_DISCONNECTED || status == WL_IDLE_STATUS)
+            {
+                if (millis() - lastAttemptTime < 15000)
+                    return false;
+                else
+                {
+                    Serial.println("WiFi: Connection timeout.");
+                    isConnecting = false;
+                }
+            }
+            else if (status == WL_CONNECT_FAILED || status == WL_NO_SSID_AVAIL)
+            {
+                isConnecting = false;
+            }
+        }
+
+        if (millis() - lastAttemptTime < 10000)
+            return false;
+
+        String ssid, pass;
         if (!wifiLoadCredentials(ssid, pass))
             return false;
 
+        Serial.printf("WiFi: Connecting to %s...\n", ssid.c_str());
+
+        WiFi.disconnect();
         WiFi.mode(WIFI_STA);
         WiFi.begin(ssid.c_str(), pass.c_str());
 
-        unsigned long start = millis();
-        while (WiFi.status() != WL_CONNECTED && (millis() - start) < 5000)
-        {
-            delay(100);
-        }
-        return WiFi.status() == WL_CONNECTED;
+        lastAttemptTime = millis();
+        isConnecting = true;
+        // ریست کردن فلگ چاپ IP برای اتصال جدید
+        // ipPrinted = false;
+
+        return false;
     }
 
     const char *stateToString(ThermostatState state)

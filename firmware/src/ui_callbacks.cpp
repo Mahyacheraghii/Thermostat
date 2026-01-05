@@ -4,6 +4,7 @@
 #include "GUI.h"
 #include <WiFi.h>
 #include <Preferences.h>
+#include <cstring>
 #include "mqtt.h"
 
 static void wifiSetStatus(const char *text)
@@ -90,7 +91,7 @@ void ui_on_setpoint_changed(lv_event_t *e)
     }
 
     // Fallback: read numeric label or text if present
-    lv_obj_t * child = (lv_obj_t *)lv_obj_get_child(obj, 0);
+    lv_obj_t *child = (lv_obj_t *)lv_obj_get_child(obj, 0);
     if (child)
     {
         const char *txt = lv_label_get_text(child);
@@ -105,11 +106,18 @@ void ui_on_setpoint_changed(lv_event_t *e)
 // Power-off request button
 void ui_on_power_button_pressed(lv_event_t *e)
 {
-    (void)e;
+    Serial.println("Power Button Clicked!"); // اضافه کردن لاگ برای تست لمس
+
     if (gCurrentState == ThermostatState::OFF)
+    {
+        Serial.println("Action: Requesting ON");
         requestPowerOn();
+    }
     else
+    {
+        Serial.println("Action: Requesting OFF");
         requestPowerOff();
+    }
 }
 
 // Calibration button pressed in UI -> run touch calibration routine.
@@ -177,6 +185,8 @@ void ui_on_wifi_connect_pressed(lv_event_t *e)
     if (GUI_Keyboard__wifi__keyboard)
         lv_obj_add_flag(GUI_Keyboard__wifi__keyboard, LV_OBJ_FLAG_HIDDEN);
 
+    Serial.printf("UI: WiFi connect requested (ssid=\"%s\", pass_len=%u)\n",
+                  ssid, pass ? (unsigned)strlen(pass) : 0U);
     wifiSaveCredentials(ssid, pass ? pass : "");
     WiFi.mode(WIFI_STA);
     WiFi.disconnect(true);
