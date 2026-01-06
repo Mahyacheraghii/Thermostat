@@ -261,7 +261,18 @@ void stateMachineUpdate()
             break;
         }
 
-        gCurrentState = coolingSpeedState();
+        const float deltaC = gCurrentTempC - gSetPointC;
+        if (gCurrentState == ThermostatState::COOLING_HIGH)
+        {
+            if (deltaC < 8.0f)
+                gCurrentState = ThermostatState::COOLING_LOW;
+        }
+        else
+        {
+            if (deltaC >= 8.0f)
+                gCurrentState = ThermostatState::COOLING_HIGH;
+        }
+
         gPumpDesired = true;
         gSetPointChanged = false;
         break;
