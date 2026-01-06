@@ -18,11 +18,11 @@
 #endif
 
 #ifndef MQTT_HOST
-#define MQTT_HOST "25e714c4c7914708950ce3a88dc1dd1a.s1.eu.hivemq.cloud"
+#define MQTT_HOST "192.168.1.27"
 #endif
 
 #ifndef MQTT_PORT
-#define MQTT_PORT 8883
+#define MQTT_PORT 1883
 #endif
 
 #ifndef MQTT_CLIENT_ID
@@ -34,28 +34,24 @@
 #endif
 
 #ifndef MQTT_USER
-#define MQTT_USER "mahya"
+#define MQTT_USER ""
 #endif
 
 #ifndef MQTT_PASS
-#define MQTT_PASS "vikrap-weqrug-xabVe6"
+#define MQTT_PASS ""
 #endif
 
 #ifndef MQTT_USE_TLS
-#define MQTT_USE_TLS 1
+#define MQTT_USE_TLS 0
 #endif
 namespace
 {
     WiFiClient s_wifiClient;
-#if MQTT_USE_TLS
-    WiFiClientSecure s_tlsClient;
-    PubSubClient s_mqttClient(s_tlsClient);
-#else
     PubSubClient s_mqttClient(s_wifiClient);
-#endif
 
+    static bool s_isConnectingNow = false;
     unsigned long s_lastPublishMs = 0;
-    const unsigned long PUBLISH_INTERVAL_MS = 1000;
+    const unsigned long PUBLISH_INTERVAL_MS = 3000;
     unsigned long s_nextReconnectMs = 0;
     unsigned long s_reconnectDelayMs = 1000;
 
@@ -86,38 +82,50 @@ namespace
 
     const char *activeBaseTopic()
     {
-        static String base;
-        String host;
-        String user;
-        String pass;
-        uint16_t port = 0;
-        if (mqttLoadConfig(host, port, user, pass, base) && base.length() > 0)
-            return base.c_str();
-        return MQTT_BASE_TOPIC;
+        static String cachedBase = "";
+        static bool loaded = false;
+
+        if (!loaded)
+        {
+            String host, user, pass, base;
+            uint16_t port = 0;
+            if (mqttLoadConfig(host, port, user, pass, base) && base.length() > 0)
+            {
+                cachedBase = base;
+            }
+            else
+            {
+                cachedBase = MQTT_BASE_TOPIC;
+            }
+            loaded = true;
+        }
+        return cachedBase.c_str();
     }
 
     bool mqttConnectWithConfig()
     {
         String host;
+        uint16_t port;
         String user;
         String pass;
         String base;
-        uint16_t port = 0;
 
-        if (mqttLoadConfig(host, port, user, pass, base))
+        // اگر در تنظیمات حافظه چیزی بود، از آن استفاده کن
+        if (mqttLoadConfig(host, port, user, pass, base) && host.length() > 0)
         {
             s_mqttClient.setServer(host.c_str(), port);
-            const char *user_c = user.length() ? user.c_str() : nullptr;
-            const char *pass_c = pass.length() ? pass.c_str() : nullptr;
-            return s_mqttClient.connect(MQTT_CLIENT_ID, user_c, pass_c, (String(activeBaseTopic()) + "/telemetry/status").c_str(), 1, true, "offline");
+            return s_mqttClient.connect(MQTT_CLIENT_ID,
+                                        user.length() ? user.c_str() : nullptr,
+                                        pass.length() ? pass.c_str() : nullptr,
+                                        (String(base) + "/telemetry/status").c_str(), 1, true, "offline");
         }
 
-        return s_mqttClient.connect(MQTT_CLIENT_ID, MQTT_USER[0] ? MQTT_USER : nullptr, MQTT_PASS[0] ? MQTT_PASS : nullptr,
+        // در غیر این صورت، از مقادیر پیش‌فرض (لپ‌تاپ خودت) استفاده کن
+        Serial.println("[MQTT] Using Default Local Config...");
+        s_mqttClient.setServer(MQTT_HOST, MQTT_PORT);
+        return s_mqttClient.connect(MQTT_CLIENT_ID, nullptr, nullptr,
                                     (String(MQTT_BASE_TOPIC) + "/telemetry/status").c_str(), 1, true, "offline");
     }
-
-// در ابتدای فایل این را اضافه کنید
-#include <nvs_flash.h>
 
     // داخل namespace در بخش wifiEnsureConnected:
     bool wifiEnsureConnected()
@@ -203,20 +211,111 @@ namespace
     {
         if (s_mqttClient.connected())
         {
-            s_mqttClient.publish(topic, payload.c_str(), true);
+            if (s_mqttClient.publish(topic, payload.c_str(), true))
+            {
+                Serial.printf("[MQTT] Sent: [%s] -> %s\n", topic, payload.c_str());
+            }
+            else
+            {
+                Serial.printf("[MQTT] Failed to publish to %s\n", topic);
+            }
         }
     }
 
     void publishState()
     {
-        String base = String(activeBaseTopic());
-        mqttPublish((base + "/telemetry/temp_c").c_str(), String(gCurrentTempC, 2));
-        mqttPublish((base + "/telemetry/humidity").c_str(), String(gCurrentHumidity, 2));
-        mqttPublish((base + "/telemetry/state").c_str(), stateToString(gCurrentState));
-        mqttPublish((base + "/telemetry/setpoint_c").c_str(), String(gSetPointC, 2));
-        mqttPublish((base + "/telemetry/hysteresis_c").c_str(), String(gHysteresisC, 2));
-        mqttPublish((base + "/telemetry/pump_desired").c_str(), gPumpDesired ? "1" : "0");
-        mqttPublish((base + "/telemetry/sensor_ok").c_str(), sensorsAvailable() ? "1" : "0");
+        // ۱. متغیرهای استاتیک برای حفظ وضعیت قبلی (برای تشخیص تغییرات)
+        static bool s_firstPublish = true;
+        static float s_lastTempC = -999.0f;
+        static float s_lastHumidity = -999.0f;
+        static ThermostatState s_lastState = ThermostatState::OFF;
+        static float s_lastSetPointC = -999.0f;
+        static float s_lastHysteresisC = -999.0f;
+        static bool s_lastPumpDesired = false;
+        static bool s_lastSensorOk = false;
+
+        // ۲. کش کردن Base Topic برای جلوگیری از باز کردن مکرر NVS و ری‌بوت شدن
+        static String cachedBaseTopic = "";
+        if (cachedBaseTopic == "")
+        {
+            cachedBaseTopic = String(activeBaseTopic());
+        }
+
+        // ۳. زمان‌بندی برای ارسال اجباری (Heartbeat) - هر ۵ دقیقه یکبار
+        static unsigned long s_lastForcePublishMs = 0;
+        const unsigned long FORCE_PUBLISH_INTERVAL = 300000;
+
+        // اگر دیسکانکت هستیم، فلگ اولین انتشار را ست کن و خارج شو
+        if (!s_mqttClient.connected())
+        {
+            s_firstPublish = true;
+            return;
+        }
+
+        const float kFloatEps = 0.01f;
+        unsigned long now = millis();
+
+        // شرط ارسال: یا اولین بار است، یا ۵ دقیقه گذشته، یا مقادیر تغییر کرده‌اند
+        bool force = s_firstPublish || (now - s_lastForcePublishMs >= FORCE_PUBLISH_INTERVAL);
+
+        // شروع چک کردن و ارسال پارامترها
+
+        // دمای فعلی
+        if (force || fabsf(gCurrentTempC - s_lastTempC) > kFloatEps)
+        {
+            mqttPublish((cachedBaseTopic + "/telemetry/temp_c").c_str(), String(gCurrentTempC, 2));
+            s_lastTempC = gCurrentTempC;
+        }
+
+        // رطوبت
+        if (force || fabsf(gCurrentHumidity - s_lastHumidity) > kFloatEps)
+        {
+            mqttPublish((cachedBaseTopic + "/telemetry/humidity").c_str(), String(gCurrentHumidity, 2));
+            s_lastHumidity = gCurrentHumidity;
+        }
+
+        // وضعیت ماشین حالت
+        if (force || gCurrentState != s_lastState)
+        {
+            mqttPublish((cachedBaseTopic + "/telemetry/state").c_str(), stateToString(gCurrentState));
+            s_lastState = gCurrentState;
+        }
+
+        // نقطه هدف (SetPoint)
+        if (force || fabsf(gSetPointC - s_lastSetPointC) > kFloatEps)
+        {
+            mqttPublish((cachedBaseTopic + "/telemetry/setpoint_c").c_str(), String(gSetPointC, 2));
+            s_lastSetPointC = gSetPointC;
+        }
+
+        // هیسترزیس
+        if (force || fabsf(gHysteresisC - s_lastHysteresisC) > kFloatEps)
+        {
+            mqttPublish((cachedBaseTopic + "/telemetry/hysteresis_c").c_str(), String(gHysteresisC, 2));
+            s_lastHysteresisC = gHysteresisC;
+        }
+
+        // وضعیت پمپ
+        if (force || gPumpDesired != s_lastPumpDesired)
+        {
+            mqttPublish((cachedBaseTopic + "/telemetry/pump_desired").c_str(), gPumpDesired ? "1" : "0");
+            s_lastPumpDesired = gPumpDesired;
+        }
+
+        // وضعیت سلامت سنسور
+        bool sensorOk = sensorsAvailable();
+        if (force || sensorOk != s_lastSensorOk)
+        {
+            mqttPublish((cachedBaseTopic + "/telemetry/sensor_ok").c_str(), sensorOk ? "1" : "0");
+            s_lastSensorOk = sensorOk;
+        }
+
+        // آپدیت زمان آخرین ارسال اجباری و اتمام وضعیت شروع
+        if (force)
+        {
+            s_lastForcePublishMs = now;
+        }
+        s_firstPublish = false;
     }
 
     void handleCommand(const String &topic, const String &payload)
@@ -243,57 +342,101 @@ namespace
         {
             if (payload == "0" || payload == "off" || payload == "false")
                 requestPowerOff();
+            else if (payload == "1" || payload == "on" || payload == "true")
+                requestPowerOn();
         }
     }
 
     void mqttCallback(char *topic, byte *payload, unsigned int length)
     {
-        String t = String(topic);
         String p;
-        p.reserve(length);
         for (unsigned int i = 0; i < length; ++i)
             p += (char)payload[i];
-        handleCommand(t, p);
+
+        // لاگ طلایی برای پیام‌های ورودی
+        Serial.printf("\n[MQTT] Message Arrived! \nTopic: [%s] \nPayload: %s\n", topic, p.c_str());
+
+        handleCommand(String(topic), p);
     }
+
+    // این را بالای تابع mqttEnsureConnected تعریف کنید
+    static unsigned long s_wifiStableTimer = 0;
 
     bool mqttEnsureConnected()
     {
         if (s_mqttClient.connected())
             return true;
 
-        if (!wifiEnsureConnected())
+        if (WiFi.status() != WL_CONNECTED)
+        {
+            s_wifiStableTimer = 0; // ریست کردن تایمر
+            return false;
+        }
+
+        // اگر تازه وصل شده، ۵ ثانیه کامل صبر کن (برای اطمینان از پایداری سوکت‌ها)
+        if (s_wifiStableTimer == 0)
+        {
+            s_wifiStableTimer = millis();
+            return false;
+        }
+
+        if (millis() - s_wifiStableTimer < 5000)
             return false;
 
-        s_mqttClient.setServer(MQTT_HOST, MQTT_PORT);
-        s_mqttClient.setCallback(mqttCallback);
         if (millis() < s_nextReconnectMs)
             return false;
 
-        if (mqttConnectWithConfig())
+        Serial.printf("[MQTT] Connecting to %s...\n", MQTT_HOST);
+
+        // ساخت کلاینت آیدی رندوم برای جلوگیری از تداخل
+        String clientId = "ESP32_Thermostat_" + String(random(1000, 9999));
+
+        // استفاده از مقادیر ثابت برای تست اولیه
+        if (s_mqttClient.connect(clientId.c_str()))
         {
-            String base = String(activeBaseTopic()) + "/cmd/#";
-            s_mqttClient.subscribe(base.c_str());
-            s_mqttClient.publish((String(activeBaseTopic()) + "/telemetry/status").c_str(), "online", true);
-            s_reconnectDelayMs = 1000;
+            Serial.println("[MQTT] Connected! ✅");
+            s_mqttClient.subscribe("thermostat/cmd/#");
             return true;
         }
-
-        s_nextReconnectMs = millis() + s_reconnectDelayMs;
-        if (s_reconnectDelayMs < 30000)
-            s_reconnectDelayMs *= 2;
-        return false;
+        else
+        {
+            Serial.printf("[MQTT] Failed, rc=%d\n", s_mqttClient.state());
+            s_nextReconnectMs = millis() + 5000;
+            return false;
+        }
     }
+
 }
 
 void mqttInit()
 {
     WiFi.mode(WIFI_STA);
-#if MQTT_USE_TLS
-    s_tlsClient.setInsecure();
-#endif
     s_mqttClient.setServer(MQTT_HOST, MQTT_PORT);
     s_mqttClient.setCallback(mqttCallback);
-    wifiEnsureConnected();
+    s_mqttClient.setBufferSize(512);
+
+    xTaskCreatePinnedToCore(
+        [](void *p)
+        {
+            for (;;)
+            {
+                // شرط بسیار سخت‌گیرانه برای شروع: وضعیت متصل + داشتن IP
+                if (WiFi.status() == WL_CONNECTED && WiFi.localIP()[0] != 0)
+                {
+                    mqttUpdate();
+                }
+                else
+                {
+                    if (s_mqttClient.connected())
+                        s_mqttClient.disconnect();
+                }
+                // افزایش زمان تاخیر برای پایداری بیشتر
+                vTaskDelay(pdMS_TO_TICKS(150));
+            }
+        },
+        "MqttTask", 10240, NULL, 1, NULL, 1); // تغییر هسته از 0 به 1
+
+    Serial.println("[MQTT] Task Started on Core 1");
 }
 
 void mqttSaveConfig(const char *host, uint16_t port, const char *user, const char *pass, const char *baseTopic)
@@ -320,6 +463,7 @@ void mqttUpdate()
         return;
 
     s_mqttClient.loop();
+    yield();
 
     unsigned long now = millis();
     if (now - s_lastPublishMs >= PUBLISH_INTERVAL_MS)

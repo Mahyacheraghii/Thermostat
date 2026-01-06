@@ -11,19 +11,19 @@
 #endif
 
 #ifndef MQTT_HOST
-#define MQTT_HOST "25e714c4c7914708950ce3a88dc1dd1a.s1.eu.hivemq.cloud"
+#define MQTT_HOST "192.168.1.17"
 #endif
 
 #ifndef MQTT_PORT
-#define MQTT_PORT 8883
+#define MQTT_PORT 1883
 #endif
 
 #ifndef MQTT_USER
-#define MQTT_USER "mahya"
+#define MQTT_USER ""
 #endif
 
 #ifndef MQTT_PASS
-#define MQTT_PASS "vikrap-weqrug-xabVe6"
+#define MQTT_PASS ""
 #endif
 
 #ifndef MQTT_BASE_TOPIC
@@ -31,7 +31,7 @@
 #endif
 
 #ifndef MQTT_USE_TLS
-#define MQTT_USE_TLS 1
+#define MQTT_USE_TLS 0
 #endif
 
 void mqttInit();
