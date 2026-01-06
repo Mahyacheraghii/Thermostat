@@ -19,6 +19,7 @@ export default function App() {
   const [deviceStatus, setDeviceStatus] = useState("unknown");
   const mqttRef = useRef(null);
   const hasFanSpeedTelemetry = useRef(false);
+  const lastFanSpeedTelemetryMs = useRef(0);
   const MQTT_URL = import.meta.env.VITE_MQTT_URL;
   const MQTT_HOST = import.meta.env.VITE_MQTT_HOST;
   const MQTT_PORT = import.meta.env.VITE_MQTT_PORT;
@@ -49,6 +50,7 @@ export default function App() {
         else if (key === "setpoint_c") setSetpoint(Number(msg));
         else if (key === "fan_speed") {
           hasFanSpeedTelemetry.current = true;
+          lastFanSpeedTelemetryMs.current = Date.now();
           if (msg === "2") {
             setFanSpeed("fast");
             setFanDirection("down");
@@ -64,21 +66,16 @@ export default function App() {
           setDeviceStatus(msg);
         }
         else if (key === "state") {
-          setIsPowerOn(msg !== "off");
-          if (!hasFanSpeedTelemetry.current) {
-            if (msg === "fan_only") {
-              setFanSpeed("slow");
-            } else if (msg === "heating" || msg === "cooling") {
-              setFanSpeed("fast");
-              setFanDirection("down");
-            } else {
-              setFanSpeed("off");
-              setFanDirection("up");
-            }
+          const fanTelemetryStale =
+            Date.now() - lastFanSpeedTelemetryMs.current > 3000;
+          if (!hasFanSpeedTelemetry.current || fanTelemetryStale) {
+            applyStateTelemetry(msg);
+          } else {
+            setIsPowerOn(msg !== "off");
           }
-          if (msg === "prestart" || msg === "cooling") {
+          if (msg === "prestart" || msg.startsWith("cooling")) {
             setIsPumpOn(true);
-          } else if (msg === "off") {
+          } else if (msg === "off" || msg === "idle") {
             setIsPumpOn(false);
           }
         } else if (key === "pump_desired") {
@@ -99,18 +96,37 @@ export default function App() {
     client.publishCommand(cmd, payload);
   };
 
+  const applyStateTelemetry = (state) => {
+    setIsPowerOn(state !== "off");
+    if (state === "fan_only") {
+      setFanSpeed("slow");
+      setFanDirection("up");
+      return;
+    }
+    if (state === "cooling_high") {
+      setFanSpeed("fast");
+      setFanDirection("down");
+      return;
+    }
+    if (state === "cooling_low" || state === "prestart") {
+      setFanSpeed("slow");
+      setFanDirection("down");
+      return;
+    }
+    setFanSpeed("off");
+    setFanDirection("up");
+  };
+
   return (
     <div className=" w-full text-white flex flex-col items-center justify-between px-2 space-y-47">
       {/* wifi + settings */}
       <div className="flex items-center justify-between w-full ">
-        {mqttStatus === "connected" && deviceStatus !== "offline" && (
-          <LuLink size={28} color="#22c55e" />
-        )}
+        {mqttStatus === "connected" && <LuLink size={28} color="#22c55e" />}
         {mqttStatus === "connecting" && (
           <LuLink2Off size={28} color="#f59e0b" />
         )}
         {mqttStatus === "error" && <LuLink2Off size={28} color="#ef4444" />}
-        {(mqttStatus === "disconnected" || deviceStatus === "offline") && (
+        {mqttStatus === "disconnected" && (
           <LuLink2Off size={28} color="#94a3b8" />
         )}
       </div>
@@ -160,10 +176,10 @@ export default function App() {
           } cursor-pointer`}
           onClick={() => {
             if (isPowerOn) {
-              publishCommand("power", "0");
+              publishCommand("power", "off");
               setIsPowerOn(false);
             } else {
-              publishCommand("power", "1");
+              publishCommand("power", "on");
               setIsPowerOn(true);
             }
           }}

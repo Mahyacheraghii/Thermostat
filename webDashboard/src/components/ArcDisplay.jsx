@@ -10,6 +10,9 @@ export default function ArcDisplay({
   currentTemp = 23,
   onChange,
 }) {
+  const formatOneDecimal = (val) => (
+    Number.isFinite(val) ? val.toFixed(1) : "--"
+  );
   const clampValue = (val) => Math.max(min, Math.min(max, val));
   const clamped = clampValue(value);
   const handleChange = (e) => {
@@ -44,8 +47,8 @@ export default function ArcDisplay({
 
       {/* humidity and current temperature below slider */}
       <div className="flex flex-col items-center text-sm">
-        <span>Humidity: {humidity}%</span>
-        <span>Current Temp: {Math.round(currentTemp)}°</span>
+        <span>Humidity: {Math.round(humidity)}%</span>
+        <span>Current Temp: {formatOneDecimal(currentTemp)}°</span>
       </div>
     </div>
   );
