@@ -3,11 +3,11 @@
 #include <Arduino.h>
 
 #ifndef WIFI_SSID
-#define WIFI_SSID "Mahya's iPhone"
+#define WIFI_SSID "CHANGE_ME"
 #endif
 
 #ifndef WIFI_PASSWORD
-#define WIFI_PASSWORD "immahyaa"
+#define WIFI_PASSWORD "CHANGE_ME"
 #endif
 
 #ifndef MQTT_HOST

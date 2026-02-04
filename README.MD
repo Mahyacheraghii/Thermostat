@@ -52,7 +52,7 @@ Core hardware used by this project:
 - 3.2" ILI9341 SPI TFT display (240x320)
 - XPT2046 resistive touch controller
 - SHT3x temperature/humidity sensor (I2C)
-- 4x relay module for heater/cooler/fan/pump control
+- 3x relay module for fan low-speed/ fan high-speed/ pump control
 
 Exact pin mappings, wiring notes, and safety constraints are defined in
 `IMPLEMENTATION_GUID.md`.

@@ -17,14 +17,14 @@ We are building a REAL, HARDWARE-READY smart thermostat using ESP32.
 - Graphics: LVGL (UI designed with SquareLine)
 - Touch: PRESENT (must be implemented)
 - Sensor: SHT3x (Temperature + Humidity, I2C)
-- Outputs: 4 relays (Heater, Cooler, Fan, Pump)
+- Outputs: 3 relays (Fan(slow speed), Fan(fast speed), Pump)
 
 ## HARDWARE (PROJECT SPECIFIC)
 
 - ESP-WROOM-32: main ESP32 module; runs firmware, Wi-Fi, MQTT, LVGL UI.
 - SHT3x: I2C temperature + humidity sensor; provides ambient data for control loops.
 - 3.2" TFT SPI 240x320 v2.0 (ILI9341): main user display; LVGL renders UI to it.
-- 4x SRD-05VDC-SL-C relays: active-HIGH relay boards for heater, cooler, fan, pump control.
+- 4x SRD-05VDC-SL-C relays: active-HIGH relay boards for fan(slow speed), fan(fast speed) and pump control.
 
 All code must be REAL, compilable, and suitable for real hardware.
 NO pseudo-code.
@@ -177,9 +177,9 @@ Configurable hysteresis (example: 0.5°C)
 
 COOLING:
 
-- Cooling HIGH when currentTemp >= setPoint + hysteresis
-- Cooling LOW when currentTemp between setPoint and setPoint + hysteresis
-- Cooling OFF when currentTemp <= setPoint - hysteresis
+- Cooling HIGH when currentTemp - setPoint >= 8 degrees
+- Cooling LOW when 0 < currentTemp - setPoint < 8 degrees
+- Cooling OFF when currentTemp - setPoint <= 0
 
 ## SENSOR REQUIREMENTS (SHT3x)
 
@@ -258,7 +258,7 @@ STEP 6 (OUTPUT APPLICATION):
 
 STEP 7 (HYSTERESIS):
 
-- Add heater/cooler hysteresis control
+- Add hysteresis control
 
 STEP 8 (TOUCH + LVGL INPUT):
 
@@ -287,11 +287,3 @@ STEP 10 (SAFETY):
 STEP 11 (MQTT/DASHBOARD):
 
 - Implement MQTT and phone webDashboard integration
-
-## PROJECT TODO LIST (BUGS / GAPS)
-
-- Fix LCD touch frequency.
-
-- Connect to Wi-Fi and MQTT server on device.
-
-- Check web dashboard and device connectivity via MQTT to have integrated data.

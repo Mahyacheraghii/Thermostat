@@ -10,11 +10,11 @@
 #include <nvs_flash.h>
 
 #ifndef WIFI_SSID
-#define WIFI_SSID "Meow Meow 5"
+#define WIFI_SSID "CHANGE_ME"
 #endif
 
 #ifndef WIFI_PASSWORD
-#define WIFI_PASSWORD "meowmeow5"
+#define WIFI_PASSWORD "CHANGE_ME"
 #endif
 
 #ifndef MQTT_HOST

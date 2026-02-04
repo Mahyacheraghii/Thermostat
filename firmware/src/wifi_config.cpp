@@ -4,8 +4,8 @@
 
 namespace
 {
-    const char kDefaultSsid[] = "Meow Meow 2.4";
-    const char kDefaultPass[] = "meowmeowmeow2.4";
+    const char kDefaultSsid[] = "CHANGE_ME";
+    const char kDefaultPass[] = "CHANGE_ME";
 
     bool wifiHasCredentials()
     {
