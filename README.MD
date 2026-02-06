@@ -15,7 +15,6 @@ For the full implementation guide, read `IMPLEMENTATION_GUID.md`.
 
 - `firmware/` - ESP32 firmware source, UI assets, state machine, sensors, outputs.
 - `webDashboard/` - Web UI, MQTT client, and frontend assets.
-- `icons/` - Project icon assets.
 - `IMPLEMENTATION_GUID.md` - Detailed build, wiring, and system rules.
 
 ## Firmware (ESP32)
